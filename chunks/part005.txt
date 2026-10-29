@@ -1,0 +1,100 @@
+    neto = montoNum - fee;
+    montoRecibidoLimpio = (neto * 2.1).toFixed(2) + ' HTG';
+  } else {
+    fee = Math.round(montoNum*0.08);
+    neto = montoNum - fee;
+    montoRecibidoLimpio = montoNum + ' DOP';
+  }
+  
+  const nueva={id:'SW-'+Date.now().toString().slice(-6), fecha:new Date().toLocaleString('es-DO'), tipo:tipo==='Recarga'?'Recarga':tipo==='Paqueticos'?'Paqueticos':tipo, ruta:tipo==='Recarga'?'Recarga Claro - 100 pesos':tipo==='Paqueticos'?'Paquetícos - 150 DOP':tipo, rutaExacta:tipo==='Recarga'?'Recarga Claro - 100 pesos entero':tipo, monto:montoNum+' DOP', montoValue:montoNum, fee:fee, neto:neto, feeText:'Fee 8%: '+fee+' Neto: '+neto, moneda:'DOP', beneficiario:'8292155657', estado:'Pendiente', timestamp:Date.now(), creadorId:currentUser.id, remitenteId:currentUser.id, montoRecibido:montoRecibidoLimpio};
+  TRANSACCIONES.unshift(nueva);
+  renderPrincipal();
+  addNotificacion('Nuevo '+tipo+' '+montoNum+' DOP - Pendiente - '+montoRecibidoLimpio, tipo);
+  alert('✅ '+tipo+' creado '+montoNum+' DOP - Recibo: '+montoRecibidoLimpio+' - Comprobante limpio sin comentario - RD->HT en HTG x2.1 - Recargas 100=100 DOP sin quitar nada - Interno queda entre nosotros');
+}
+
+function filtrarTabla(tbodyId, val){ const tbody=document.getElementById(tbodyId); if(!tbody) return; tbody.querySelectorAll('tr').forEach(tr=>{ tr.style.display=tr.textContent.toLowerCase().includes(val.toLowerCase())?'':'none'; }); }
+function exportExcel(id){ alert('Excel '+id+' - Requisito básico - Superbien - No cambiar'); }
+function exportPDF(id){ alert('PDF '+id); }
+function exportCSV(id){ alert('CSV '+id); }
+function exportExcelGlobal(){ exportExcel('principal'); }
+function exportPDFGlobal(){ exportPDF('principal'); }
+function exportCSVGlobal(){ exportCSV('principal'); }
+function limpiarBuscador(){ document.getElementById('buscador-global').value=''; renderPrincipal(); }
+function aprobar(id){ let t=TRANSACCIONES.find(x=>String(x.id)===String(id)); if(!t) return; t.estado='Aprobado'; t.aprobadoPor=currentUser.id; renderPrincipal(); const viewActual=document.querySelector('.view:not(.hidden)'); if(viewActual && viewActual.id!=='view-tablero') renderModulo(viewActual.id.replace('view-','')); setTimeout(()=>verComprobante(id),500); alert('✅ APROBADO - Comprobante limpio: '+t.montoRecibido+' - RD->HT en HTG x2.1 - Recargas 100=100 DOP'); }
+function rechazar(id){ let t=TRANSACCIONES.find(x=>String(x.id)===String(id)); if(!t) return; t.estado='Rechazado'; renderPrincipal(); const viewActual=document.querySelector('.view:not(.hidden)'); if(viewActual && viewActual.id!=='view-tablero') renderModulo(viewActual.id.replace('view-','')); }
+function noCoincide(id){ let t=TRANSACCIONES.find(x=>String(x.id)===String(id)); if(!t) return; t.estado='No coincide'; renderPrincipal(); const viewActual=document.querySelector('.view:not(.hidden)'); if(viewActual && viewActual.id!=='view-tablero') renderModulo(viewActual.id.replace('view-','')); }
+function modificar(id){ let t=TRANSACCIONES.find(x=>String(x.id)===String(id)); if(!t) return; if(t.estado==='Aprobado' && currentUser.id!=='ADMINADMIN'){ alert('Aprobado ningún remitente ni agente podrá modificar - Solo admin'); return; } const n=prompt('Modificar monto '+id+' Actual '+t.montoValue); if(n && !isNaN(n)){ t.montoValue=parseFloat(n); t.monto=n+' DOP'; if(t.tipo==='Recarga'){ t.montoRecibido = parseFloat(n)+' DOP'; } else if(t.tipo==='Paqueticos' || t.tipo==='Paquetico'){ t.montoRecibido = parseFloat(n)+' DOP'; } else { const fee=Math.round(parseFloat(n)*0.08); const neto=parseFloat(n)-fee; t.montoRecibido = (neto*2.1).toFixed(2)+' HTG'; t.fee=fee; t.neto=neto; t.feeText='Fee 8%: '+fee+' Neto: '+neto; } renderPrincipal(); const viewActual=document.querySelector('.view:not(.hidden)'); if(viewActual && viewActual.id!=='view-tablero') renderModulo(viewActual.id.replace('view-','')); } }
+function borrar(id){ let t=TRANSACCIONES.find(x=>String(x.id)===String(id)); if(!t) return; if(t.estado==='Aprobado' && currentUser.id!=='ADMINADMIN'){ alert('Aprobado ningún remitente ni agente podrá eliminar - Solo admin'); return; } if(confirm('Borrar '+id+'? - Si rechazado vuelve balance donde salió')){ if(t.estado==='Rechazado' || t.estado==='Pendiente'){ if(t.remitenteId===ADMIN.id) ADMIN_BAL.DOP+=t.montoValue; else{ const rem=REMITENTES.find(r=>r.id===t.remitenteId); if(rem) rem.balances.DOP+=t.montoValue; } } TRANSACCIONES=TRANSACCIONES.filter(x=>String(x.id)!==String(id)); renderPrincipal(); const viewActual=document.querySelector('.view:not(.hidden)'); if(viewActual && viewActual.id!=='view-tablero') renderModulo(viewActual.id.replace('view-','')); } }
+function ver(id){ alert('Ver '+id); }
+function ajustarBalance(id){ const m=prompt('Ajustar balance para '+id+' Monto:'); if(m && !isNaN(m)){ const ag=AGENTES.find(a=>a.id===id); if(ag){ ag.balances.DOP+=parseFloat(m); renderPrincipal(); } } }
+
+function verComprobante(id){
+  let t=TRANSACCIONES.find(x=>String(x.id)===String(id));
+  if(!t) t={id:id, fecha:'20/10/2026', hora:'4:54:34 p. m.', tipo:'Envío', ruta:'RD → HT Natcash', beneficiario:'SAUTHER JALBAR', beneficiarioTel:'35249812', montoRecibido:'1,062.60 HTG', creadorId:'ADMINADMIN', aprobadoPor:'ADMINADMIN', estado:'Aprobado', montoValue:2000, fee:160, neto:1840};
+  if(t.estado!=='Aprobado'){ alert('❌ Comprobante no debe aparecer sin antes ser aprobados - Estado: '+t.estado+' - Comprobante solo después aprobado - Error grave'); return; }
+  
+  // COMPROBANTE LIMPIO - SIN COMENTARIO - SIEMPRE CANTIDAD SIN COMENTARIO - INTERNO QUEDA ENTRE NOSOTROS
+  // Si es recargas no debe decir persona no va a recibir 95 - queda interno pero comprobante no debe ser así - siempre cantidad sin comentario
+  // Si es RD a Haití multiplicación por 2.1 da cantidad recibida - debe decir en gourde haitiano cantidad recibida no en pesos
+  // Si son 100 lo pones 100 pero este comentario no debe estar en comprobante - eso es interno
+  let montoLimpio = t.montoRecibido;
+  
+  document.getElementById('comp-fecha').innerText=t.fecha;
+  document.getElementById('comp-hora').innerText=t.fecha.split(' ')[1]||'4:54:34 p. m.';
+  document.getElementById('comp-tipo').innerText='Transacción: '+t.tipo+' - '+(t.ruta||'');
+  document.getElementById('comp-beneficiario').innerText=t.beneficiario||'SAUTHER JALBAR';
+  document.getElementById('comp-beneficiario-tel').innerText=t.beneficiarioTel||'35249812';
+  document.getElementById('comp-monto').innerText=montoLimpio;
+  document.getElementById('comp-creador').innerText=t.creadorId||'ADMINADMIN';
+  document.getElementById('comp-autorizado').innerText=t.aprobadoPor||'ADMINADMIN';
+  document.getElementById('modal-comprobante').classList.remove('hidden');
+}
+
+function addNotificacion(msg, tipo){
+  tipo=tipo||'Envío';
+  const noti={id:Date.now(), msg:msg, tipo:tipo, fecha:new Date().toLocaleString('es-DO'), leida:false};
+  notificaciones.unshift(noti);
+  document.getElementById('bell-count').innerText=notificaciones.filter(n=>!n.leida).length;
+  document.getElementById('bell-count').classList.remove('hidden');
+  const list=document.getElementById('notif-list');
+  if(list){
+    const div=document.createElement('div');
+    div.className='p-3 border-b hover:bg-blue-50 cursor-pointer text-[11px]';
+    div.innerHTML=`<div class="font-bold">🔔 ${msg}</div><div class="text-[9px]">Transacción: ${tipo} - ${noti.fecha} - Click lleva donde transacción - Solo campanita</div>`;
+    div.onclick=function(){
+      noti.leida=true;
+      document.getElementById('notif-panel').classList.add('hidden');
+      const routeType=String(tipo||'').trim().toLocaleLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+      if(['recarga','recargas'].includes(routeType)) showView('recargas');
+      else if(['paquetico','paqueticos'].includes(routeType)) showView('paquetikos');
+      else if(['envio','envios'].includes(routeType)) showView('envios');
+      else if(['retiro','retiros'].includes(routeType)) showView('retiros');
+      else if(['deposito','depositos'].includes(routeType)) showView('depositos');
+      else if(['factura','facturas','servicio','servicios'].includes(routeType)) showView('facturas');
+      else if(['comision','comisiones'].includes(routeType)) showView('comisiones');
+      else if(['ajuste','ajustes'].includes(routeType)) showView('ajustes');
+      else if(['bono','bonos'].includes(routeType)) showView('bono');
+      else if(['registro','remitente','remitentes'].includes(routeType)) showView('remitentes');
+      else showView('tablero');
+      notificaciones=notificaciones.filter(n=>n.id!==noti.id);
+      document.getElementById('bell-count').innerText=notificaciones.filter(n=>!n.leida).length;
+      div.remove();
+    };
+    list.prepend(div);
+  }
+}
+
+document.getElementById('bell-top').onclick=()=>{ document.getElementById('notif-panel').classList.toggle('hidden'); };
+
+setTimeout(()=>{
+  renderPrincipal();
+},500);
+</script>
+
+<!-- MODAL RECARGAS EXACTO FOTO - Recargas - Comisión 5% -->
+<div id="modal-recargas-exacto" class="hidden fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl relative">
+    <button onclick="document.getElementById('modal-recargas-exacto').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl">✕</button>
+    <h3 class="font-bold text-[15px] mb-4 flex items-center gap-2">📱 Recargas - Comisión 5%</h3>
+    <div class="space-y-4">

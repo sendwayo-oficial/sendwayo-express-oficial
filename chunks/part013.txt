@@ -1,0 +1,100 @@
+  
+  const nueva={
+    id:'SW-RET-'+Date.now().toString().slice(-6),
+    fecha:new Date().toLocaleString('es-DO'),
+    tipo:'Retiro',
+    ruta:ruta,
+    rutaExacta:'Ruta: '+ruta+' - Beneficiario: '+benSel,
+    monto:monto+' DOP',
+    montoValue:monto,
+    fee:fee,
+    neto:neto,
+    feeText:'Fee: '+fee+' Neto: '+neto,
+    moneda:'DOP',
+    beneficiario:benSel,
+    estado:'Pendiente',
+    timestamp:Date.now(),
+    creadorId:currentUser.id,
+    remitenteId:currentUser.id,
+    montoRecibido:montoRecibido
+  };
+  
+  TRANSACCIONES.unshift(nueva);
+  renderPrincipal();
+  const viewActual=document.querySelector('.view:not(.hidden)');
+  if(viewActual && viewActual.id!=='view-tablero') renderModulo(viewActual.id.replace('view-',''));
+  document.getElementById('modal-retiro-compacto').classList.add('hidden');
+  alert('✅ Retiro creado '+monto+' - A recibir: '+montoRecibido);
+}
+
+window.guardarDepositoExacto = function(){
+  const cuenta = document.getElementById('deposito-cuenta')?.value||'Banco Popular';
+  const remitente = document.getElementById('deposito-remitente')?.value||'REM-DANIA';
+  const monto = parseFloat(document.getElementById('deposito-monto')?.value)||0;
+  const notas = document.getElementById('deposito-notas')?.value||'';
+  
+  if(!(monto>0)){ window.sendwayoShowInlineNotice('Introduzca un monto válido.', 'error'); return; }
+  
+  const nueva={
+    id:'SW-DEP-'+Date.now().toString().slice(-6),
+    fecha:new Date().toLocaleString('es-DO'),
+    tipo:'Depósito',
+    ruta:'Depósito - '+cuenta,
+    rutaExacta:'Cuenta: '+cuenta+' - Remitente: '+remitente+' - Notas: '+notas,
+    monto:monto+' DOP',
+    montoValue:monto,
+    fee:0,
+    neto:monto,
+    feeText:'Fee 0',
+    moneda:'DOP',
+    beneficiario:remitente,
+    estado:'Pendiente',
+    timestamp:Date.now(),
+    creadorId:currentUser.id,
+    remitenteId:currentUser.id,
+    montoRecibido:monto+' DOP'
+  };
+  
+  TRANSACCIONES.unshift(nueva);
+  renderPrincipal();
+  const viewActual=document.querySelector('.view:not(.hidden)');
+  if(viewActual && viewActual.id!=='view-tablero') renderModulo(viewActual.id.replace('view-',''));
+  document.getElementById('modal-deposito-exacto').classList.add('hidden');
+  alert('✅ Depósito creado '+monto+' DOP - '+cuenta);
+}
+
+// SEPARAR ENVIOS RETIROS DEPOSITO - NO DEBEN ESTAR JUNTOS - TRES COSAS DIFERENTES - DESGLOSARLO
+window.showViewOriginal = window.showView;
+window.showView = function(view){
+  if(view==='envios'){
+    // Solo envíos - no retiros ni depositos
+    document.querySelectorAll('.view').forEach(v=>v.classList.add('hidden'));
+    document.getElementById('view-tablero').classList.add('hidden');
+    const el=document.getElementById('view-envios');
+    if(el){ el.classList.remove('hidden'); renderModuloSeparado('envios'); }
+    return;
+  } else if(view==='retiros'){
+    document.querySelectorAll('.view').forEach(v=>v.classList.add('hidden'));
+    document.getElementById('view-tablero').classList.add('hidden');
+    let el=document.getElementById('view-retiros');
+    if(!el){
+      el=document.createElement('div');
+      el.id='view-retiros';
+      el.className='view bg-white rounded-xl border shadow-sm p-0';
+      document.querySelector('.flex-1').appendChild(el);
+    }
+    el.classList.remove('hidden');
+    renderModuloSeparado('retiros');
+    return;
+  } else if(view==='depositos'){
+    document.querySelectorAll('.view').forEach(v=>v.classList.add('hidden'));
+    document.getElementById('view-tablero').classList.add('hidden');
+    let el=document.getElementById('view-depositos');
+    if(!el){
+      el=document.createElement('div');
+      el.id='view-depositos';
+      el.className='view bg-white rounded-xl border shadow-sm p-0';
+      document.querySelector('.flex-1').appendChild(el);
+    }
+    el.classList.remove('hidden');
+    renderModuloSeparado('depositos');

@@ -1,0 +1,100 @@
+    return;
+  }
+  window.showViewOriginal(view);
+}
+
+window.renderModuloSeparado = function(view){
+  const cont=document.getElementById('view-'+view);
+  if(!cont) return;
+  
+  let tipoFiltro='';
+  let titulo='';
+  if(view==='envios'){ tipoFiltro='Envío'; titulo='ENVÍOS - SEPARADO - NO CON RETIROS NI DEPOSITO - TRES COSAS DIFERENTES'; }
+  else if(view==='retiros'){ tipoFiltro='Retiro'; titulo='RETIROS - SEPARADO - NO CON ENVIOS NI DEPOSITO'; }
+  else if(view==='depositos'){ tipoFiltro='Depósito'; titulo='DEPÓSITOS - SEPARADO - NO CON ENVIOS NI RETIROS'; }
+  
+  const sorted=[...TRANSACCIONES].sort((a,b)=>(b.timestamp||0)-(a.timestamp||0));
+  let filtrados=sorted.filter(t=>t.tipo===tipoFiltro);
+  
+  cont.innerHTML=`
+    <div class="p-3 border-2 border-yellow-400 rounded-xl bg-[#eef6ff] flex flex-wrap justify-between items-center gap-2">
+      <span class="font-bold text-[11px] tracking-tight flex-1 min-w-[300px]">${titulo} - TODOS LOS CAMPOS REQUISITOS BÁSICOS: Registro nuevo/Agregar nuevo, Buscador, Excel, PDF, CSV, Numeración 01 02 03 Antiguo a reciente Último número uno, Acciones Modificar Borrar Aprobado Rechazado No coincide Comprobante solo después aprobado - NO CAMBIAR - SUPERBIEN - HABILITADO</span>
+      <div class="flex items-center gap-2">
+        <button onclick="abrirModalSeparado('${view}')" class="bg-[#2a5aa8] text-white text-[10px] font-bold w-[70px] h-[70px] rounded-full flex flex-col items-center justify-center leading-tight shadow"><span class="text-[14px]">+</span><span>Registro</span><span>nuevo /</span><span>Agregar</span><span>nuevo</span></button>
+        <div class="bg-white border rounded-full px-4 py-2 flex items-center gap-1 w-[160px] h-[70px] shadow"><span>🔍</span><input id="busc-${view}" placeholder="Buscador..." class="outline-none text-[11px] w-full bg-transparent" onkeyup="filtrarTabla('tabla-${view}-body', this.value)"></div>
+        <button onclick="exportExcel('${view}')" class="bg-green-600 text-white text-[11px] font-bold w-[60px] h-[70px] rounded-full shadow">Excel</button>
+        <button onclick="exportPDF('${view}')" class="bg-red-600 text-white text-[11px] font-bold w-[60px] h-[70px] rounded-full shadow">PDF</button>
+        <button onclick="exportCSV('${view}')" class="bg-[#0f2440] text-white text-[11px] font-bold w-[60px] h-[70px] rounded-full shadow">CSV</button>
+      </div>
+    </div>
+    <div class="overflow-x-auto mt-3">
+      <table class="w-full text-[10px]">
+        <thead><tr class="bg-gray-50 text-[9px] tracking-tight"><th class="p-3 text-left">N°</th><th class="p-3 text-left">ID / FECHA</th><th class="p-3 text-left">RUTA EXACTA SEPARADA</th><th class="p-3 text-left">MONTO / FEE 8% - Haiti-Haiti 25 fee = 1975</th><th class="p-3 text-left">ESTADO</th><th class="p-3 text-left">ACCIONES - Remitente solo Modificar Borrar - Admin Modificar Borrar Aprobado Rechazado No coincide Comprobante después aprobado</th></tr></thead>
+        <tbody id="tabla-${view}-body"></tbody>
+      </table>
+    </div>
+  `;
+  
+  const tbody=document.getElementById(`tabla-${view}-body`);
+  tbody.innerHTML='';
+  if(filtrados.length===0){
+    tbody.innerHTML=`<tr><td colspan="6" class="p-8 text-center text-gray-500">No hay transacciones en ${view} - Pero tiene agregar nuevo, buscador, Excel, PDF, CSV, numeración 01 02 03, acciones - Habilitado - Click abrir ventanilla desglose</td></tr>`;
+    return;
+  }
+  filtrados.forEach((t,idx)=>{
+    const num=String(idx+1).padStart(2,'0');
+    const tr=document.createElement('tr');
+    tr.className='border-b hover:bg-blue-50';
+    let estadoClass=t.estado==='Aprobado'?'bg-green-100 text-green-700':t.estado==='Pendiente'?'bg-amber-100 text-amber-700':t.estado==='No coincide'?'bg-purple-100 text-purple-700':'bg-red-100 text-red-700';
+    let acciones='';
+    if(t.estado==='Aprobado'){
+      // Todos comprobantes deben salir después ser aprobado - también para remitentes deben aparecer comprobante después aprobado
+      if(currentUser.id==='ADMINADMIN' || currentUser.id.startsWith('AG')){
+        acciones=`<button onclick="modificar('${t.id}')" class="bg-white border px-2 py-1 rounded-full text-[9px]">Modificar</button> <button onclick="borrar('${t.id}')" class="bg-white border px-2 py-1 rounded-full text-[9px]">Borrar</button> <button onclick="verComprobante('${t.id}')" class="bg-orange-400 text-white px-2 py-1 rounded-full text-[9px]">Comprobante - Después aprobado - Remitente y admin</button>`;
+      } else {
+        // Remitente: solo modificar y eliminar/borrar, pero comprobante después aprobado debe aparecer
+        acciones=`<button onclick="verComprobante('${t.id}')" class="bg-orange-400 text-white px-2 py-1 rounded-full text-[9px]">Comprobante - Después aprobado - Remitente</button>`;
+      }
+    } else {
+      if(currentUser.id.startsWith('REM')){
+        // Para remitente solamente debe aparecer modificar y eliminar o borrar
+        acciones=`<button onclick="modificar('${t.id}')" class="bg-white border px-2 py-1 rounded-full text-[9px]">Modificar - Remitente solo modificar borrar</button> <button onclick="borrar('${t.id}')" class="bg-white border px-2 py-1 rounded-full text-[9px]">Borrar - Remitente solo eliminar borrar</button>`;
+      } else {
+        // Para agentes y admin debe aparecer modificar, borrar, aprobado, rechazado, no coincide, comprobante si lo hubiera
+        acciones=`<button onclick="ver('${t.id}')" class="bg-[#1e3a5f] text-white px-2 py-1 rounded-full text-[9px]">Ver</button> <button onclick="modificar('${t.id}')" class="bg-white border px-2 py-1 rounded-full text-[9px]">Modificar - Admin agente</button> <button onclick="borrar('${t.id}')" class="bg-white border px-2 py-1 rounded-full text-[9px]">Borrar - Admin agente</button> <button onclick="aprobar('${t.id}')" class="bg-green-600 text-white px-2 py-1 rounded-full text-[9px]">Aprobado</button> <button onclick="rechazar('${t.id}')" class="bg-red-600 text-white px-2 py-1 rounded-full text-[9px]">Rechazado</button> <button onclick="noCoincide('${t.id}')" class="bg-purple-600 text-white px-2 py-1 rounded-full text-[9px]">No coincide</button>`;
+      }
+    }
+    tr.innerHTML=`<td class="p-3 font-bold">${num} - Antiguo a reciente</td><td class="p-3"><div class="font-bold">${t.id}</div><div class="text-[9px] text-gray-500">${t.fecha}</div></td><td class="p-3"><span class="bg-blue-50 px-2 py-1 rounded-full text-[9px] font-bold">${t.ruta}</span><div class="text-[9px] text-gray-500 mt-1">${t.rutaExacta}</div></td><td class="p-3"><div class="font-bold">${t.monto}</div><div class="text-[9px] text-orange-600">${t.feeText} - Recibido: ${t.montoRecibido} - ${t.ruta.includes('HT → HT')?'Haiti-Haiti 2000-25=1975 comprobante':''}</div></td><td class="p-3"><span class="px-3 py-1 rounded-full text-[9px] font-bold ${estadoClass}">${t.estado}</span></td><td class="p-3"><div class="flex flex-wrap gap-1">${acciones}</div></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+window.abrirModalSeparado = function(view){
+  if(view==='envios') document.getElementById('modal-envio-compacto')?.classList.remove('hidden');
+  else if(view==='retiros') {
+    // Unificar todas las entradas de Agregar retiro con la ventanilla NatCash/MonCash
+    // que contiene el cálculo correcto en gourdes haitianos (HTG).
+    const modal=document.getElementById('modal-retiro-v162');
+    if(modal){ modal.classList.remove('hidden'); if(typeof window.v162_onRetiroRuta==='function') window.v162_onRetiroRuta(); }
+    else document.getElementById('modal-retiro-compacto')?.classList.remove('hidden');
+  }
+  else if(view==='depositos') document.getElementById('modal-deposito-exacto')?.classList.remove('hidden');
+}
+
+// Override verComprobante to handle Haiti-Haiti 1975
+const originalVerComprobante = window.verComprobante;
+window.verComprobante = function(id){
+  let t=TRANSACCIONES.find(x=>String(x.id)===String(id));
+  if(!t){ alert('No encontrado'); return; }
+  if(t.estado!=='Aprobado'){ alert('Ningun comprobante antes de ser aprobado - Estado: '+t.estado+' - Comprobante solo después aprobado'); return; }
+  
+  // Haiti a Haiti 2000 gourdes cobra 25, monto a recibir 1975 comprobante
+  let montoLimpio = t.montoRecibido;
+  
+  document.getElementById('comp-fecha').innerText=t.fecha;
+  document.getElementById('comp-hora').innerText=t.fecha.split(' ')[1]||'4:54:34 p. m.';
+  document.getElementById('comp-tipo').innerText='Transacción: '+t.tipo+' - '+(t.ruta||'');
+  document.getElementById('comp-beneficiario').innerText=t.beneficiario||'SAUTHER JALBAR';
+  document.getElementById('comp-beneficiario-tel').innerText=t.beneficiarioTel||'35249812';
+  document.getElementById('comp-monto').innerText=montoLimpio;
+  document.getElementById('comp-creador').innerText=t.creadorId||'ADMINADMIN';

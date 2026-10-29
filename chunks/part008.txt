@@ -1,0 +1,100 @@
+  else if(!isNaN(parseFloat(montoManual))) montoNum = parseFloat(montoManual);
+  
+  if(!numero || numero.length < 7){ alert('Ponga número de celular obligatorio'); return; }
+  
+  if(currentUser.id==='ADMINADMIN') ADMIN_BAL.DOP-=montoNum;
+  else { const rem=REMITENTES.find(r=>r.id===currentUser.id); if(rem) rem.balances.DOP-=montoNum; }
+  
+  const nueva={
+    id:'SW-PAQ-'+Date.now().toString().slice(-6),
+    fecha:new Date().toLocaleString('es-DO'),
+    tipo:'Paqueticos',
+    ruta:'Paquetiko '+compania+' - '+plan,
+    rutaExacta:'Compañía: '+compania+' - Número: '+numero+' - Plan: '+plan+' - '+montoManual,
+    monto:montoNum+' DOP',
+    montoValue:montoNum,
+    fee:10,
+    neto:montoNum,
+    feeText:'Fee 10',
+    moneda:'DOP',
+    beneficiario:numero,
+    beneficiarioTel:numero,
+    compania:compania,
+    estado:'Pendiente',
+    timestamp:Date.now(),
+    creadorId:currentUser.id,
+    remitenteId:currentUser.id,
+    montoRecibido: montoNum+' DOP'
+  };
+  TRANSACCIONES.unshift(nueva);
+  renderPrincipal();
+  const viewActual=document.querySelector('.view:not(.hidden)');
+  if(viewActual && viewActual.id!=='view-tablero') renderModulo(viewActual.id.replace('view-',''));
+  document.getElementById('modal-paquetikos-exacto').classList.add('hidden');
+  addNotificacion('Nuevo paquetiko '+compania+' '+montoNum+' DOP - Pendiente - Debe decir paquetico bien', 'Paqueticos');
+  alert('✅ Paquetiko creado '+montoNum+' DOP - '+compania+' - '+numero+' - '+plan+' - Comprobante limpio '+montoNum+' DOP');
+}
+
+window.guardarFacturaExacto = function(){
+  const compania = document.getElementById('fact-compania-exacto')?.value || 'Claro - Factura';
+  const numero = document.getElementById('fact-numero-exacto')?.value || '123456';
+  const monto = document.getElementById('fact-monto-exacto')?.value || '500';
+  const montoNum = parseFloat(monto) || 500;
+  
+  if(currentUser.id==='ADMINADMIN') ADMIN_BAL.DOP-=montoNum;
+  else { const rem=REMITENTES.find(r=>r.id===currentUser.id); if(rem) rem.balances.DOP-=montoNum; }
+  
+  const nueva={
+    id:'SW-FAC-'+Date.now().toString().slice(-6),
+    fecha:new Date().toLocaleString('es-DO'),
+    tipo:'Servicios',
+    ruta:'Pago '+compania,
+    rutaExacta:'Servicio: '+compania+' - Contrato: '+numero,
+    monto:montoNum+' DOP',
+    montoValue:montoNum,
+    fee:Math.round(montoNum*0.05),
+    neto:montoNum,
+    feeText:'Fee 5%: '+Math.round(montoNum*0.05),
+    moneda:'DOP',
+    beneficiario:numero,
+    estado:'Pendiente',
+    timestamp:Date.now(),
+    creadorId:currentUser.id,
+    remitenteId:currentUser.id,
+    montoRecibido: montoNum+' DOP'
+  };
+  TRANSACCIONES.unshift(nueva);
+  renderPrincipal();
+  const viewActual=document.querySelector('.view:not(.hidden)');
+  if(viewActual && viewActual.id!=='view-tablero') renderModulo(viewActual.id.replace('view-',''));
+  document.getElementById('modal-facturas-exacto').classList.add('hidden');
+  addNotificacion('Nuevo pago factura '+compania+' '+montoNum+' DOP', 'Servicios');
+  alert('✅ Factura creada '+montoNum+' DOP - '+compania);
+}
+
+window.guardarComisionExacto = function(){
+  const metodo = document.getElementById('com-metodo-exacto')?.value || 'Wallet';
+  const moneda = document.getElementById('com-moneda-exacto')?.value || 'Pesos Dominicanos (RD$)';
+  const monto = document.getElementById('com-monto-exacto')?.value || '0';
+  const notas = document.getElementById('com-notas-exacto')?.value || '';
+  const montoNum = parseFloat(monto) || 0;
+  
+  if(!(montoNum>0)){ window.sendwayoShowInlineNotice('Introduzca un monto válido.', 'error'); return; }
+  
+  // Wallet recargar balance / retiro comisión - va directo balance
+  if(metodo.includes('Wallet')){
+    const rem = REMITENTES.find(r=>r.id===currentUser.id) || REMITENTES[0];
+    if(rem){
+      if(montoNum <= rem.commissions.DOP){
+        rem.commissions.DOP-=montoNum;
+        rem.balances.DOP+=montoNum;
+      } else {
+        rem.balances.DOP+=montoNum;
+      }
+    }
+  }
+  
+  const nueva={
+    id:'SW-COM-'+Date.now().toString().slice(-6),
+    fecha:new Date().toLocaleString('es-DO'),
+    tipo:'Comisión',

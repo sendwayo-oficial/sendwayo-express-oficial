@@ -1,0 +1,100 @@
+}
+
+// Agregar beneficiario manual con registro automático
+window.agregarBeneficiarioManual = function(){
+  const nombre = document.getElementById('envio-ben-nombre-manual')?.value||'';
+  const tel = document.getElementById('envio-ben-tel-manual')?.value||'';
+  if(!nombre && !tel){ alert('Escriba nombre manual o tel manual'); return; }
+  
+  const nuevo = {
+    nombre: nombre||'Manual',
+    telefono: tel||'000000',
+    id:'BEN-'+Date.now().toString().slice(-4)
+  };
+  window.BENEFICIARIOS_DB.unshift(nuevo);
+  
+  // Actualizar select
+  const sel=document.getElementById('envio-beneficiario');
+  if(sel){
+    const opt=document.createElement('option');
+    opt.text = nuevo.nombre + ' - ' + nuevo.telefono;
+    opt.selected=true;
+    sel.prepend(opt);
+  }
+  
+  alert('✅ Beneficiario agregado: '+nuevo.nombre+' - '+nuevo.telefono+' - Registro automático en sistema - Ahora aparece como sugerencia al escribir número');
+}
+
+// Inicializar sugerencias al escribir - cuando pongo un número debe aparecer sugerencia
+document.addEventListener('DOMContentLoaded', function(){
+  // Para envio
+  const nombreManual = document.getElementById('envio-ben-nombre-manual');
+  const telManual = document.getElementById('envio-ben-tel-manual');
+  
+  if(nombreManual){
+    // Crear lista sugerencias
+    let lista = document.getElementById('lista-sug-envio-nombre');
+    if(!lista){
+      lista=document.createElement('div');
+      lista.id='lista-sug-envio-nombre';
+      lista.className='hidden absolute bg-white border rounded-lg shadow-lg max-h-32 overflow-y-auto z-[200] w-full';
+      nombreManual.parentNode.style.position='relative';
+      nombreManual.parentNode.appendChild(lista);
+    }
+    nombreManual.addEventListener('input', function(){ mostrarSugerencias('envio-ben-nombre-manual', 'lista-sug-envio-nombre'); });
+    nombreManual.addEventListener('focus', function(){ if(this.value.length>=2) mostrarSugerencias('envio-ben-nombre-manual', 'lista-sug-envio-nombre'); });
+  }
+  
+  if(telManual){
+    let lista = document.getElementById('lista-sug-envio-tel');
+    if(!lista){
+      lista=document.createElement('div');
+      lista.id='lista-sug-envio-tel';
+      lista.className='hidden absolute bg-white border rounded-lg shadow-lg max-h-32 overflow-y-auto z-[200] w-full';
+      telManual.parentNode.style.position='relative';
+      telManual.parentNode.appendChild(lista);
+    }
+    telManual.addEventListener('input', function(){ mostrarSugerencias('envio-ben-tel-manual', 'lista-sug-envio-tel'); });
+    telManual.addEventListener('focus', function(){ if(this.value.length>=2) mostrarSugerencias('envio-ben-tel-manual', 'lista-sug-envio-tel'); });
+  }
+  
+  // Para retiro
+  const retiroNombre = document.getElementById('retiro-ben-nombre-manual');
+  const retiroTel = document.getElementById('retiro-ben-tel-manual');
+  if(retiroNombre){
+    let lista=document.getElementById('lista-sug-retiro-nombre');
+    if(!lista){
+      lista=document.createElement('div');
+      lista.id='lista-sug-retiro-nombre';
+      lista.className='hidden absolute bg-white border rounded-lg shadow-lg max-h-32 overflow-y-auto z-[200] w-full';
+      retiroNombre.parentNode.style.position='relative';
+      retiroNombre.parentNode.appendChild(lista);
+    }
+    retiroNombre.addEventListener('input', function(){ mostrarSugerencias('retiro-ben-nombre-manual', 'lista-sug-retiro-nombre'); });
+  }
+  if(retiroTel){
+    let lista=document.getElementById('lista-sug-retiro-tel');
+    if(!lista){
+      lista=document.createElement('div');
+      lista.id='lista-sug-retiro-tel';
+      lista.className='hidden absolute bg-white border rounded-lg shadow-lg max-h-32 overflow-y-auto z-[200] w-full';
+      retiroTel.parentNode.style.position='relative';
+      retiroTel.parentNode.appendChild(lista);
+    }
+    retiroTel.addEventListener('input', function(){ mostrarSugerencias('retiro-ben-tel-manual', 'lista-sug-retiro-tel'); });
+  }
+  
+  // Recargas - sugerencia número registrado
+  const recNumero = document.getElementById('rec-numero-exacto');
+  if(recNumero){
+    let lista=document.getElementById('lista-sug-rec');
+    if(!lista){
+      lista=document.createElement('div');
+      lista.id='lista-sug-rec';
+      lista.className='hidden absolute bg-white border rounded-lg shadow-lg max-h-32 overflow-y-auto z-[200] w-full';
+      recNumero.parentNode.style.position='relative';
+      recNumero.parentNode.appendChild(lista);
+    }
+    recNumero.addEventListener('input', function(){ mostrarSugerencias('rec-numero-exacto', 'lista-sug-rec'); });
+  }
+  

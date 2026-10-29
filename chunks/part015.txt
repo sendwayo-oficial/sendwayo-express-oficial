@@ -1,0 +1,100 @@
+  document.getElementById('comp-autorizado').innerText=t.aprobadoPor||'ADMINADMIN';
+  document.getElementById('modal-comprobante').classList.remove('hidden');
+}
+
+// Asegurar que todos los campos del tablero principal esten habilitados y clic abra ventanilla desglose
+document.addEventListener('click', function(e){
+  const btn = e.target.closest('button[onclick*="filtrarRuta"]');
+  if(btn){
+    // Al dar clic en uno del tablero, debe abrir ventanilla desglose
+    const ruta = btn.getAttribute('onclick').match(/'([^']+)'/)?.[1]||'';
+    if(ruta.includes('RD') || ruta.includes('HT') || ruta.includes('USA') || ruta.includes('Deposito')){
+      // Abrir modal envio con ruta preseleccionada
+      setTimeout(()=>{
+        document.getElementById('modal-envio-compacto').classList.remove('hidden');
+        const sel=document.getElementById('envio-ruta');
+        if(sel){
+          for(let i=0;i<sel.options.length;i++){
+            if(sel.options[i].text.includes(ruta.split(' ')[0]) || ruta.includes(sel.options[i].text.split(' ')[0])){
+              sel.selectedIndex=i;
+              break;
+            }
+          }
+          calcularEnvio();
+        }
+      },100);
+    }
+  }
+});
+
+console.log('V144 - Habilitado todo tablero, desglose ventanilla al clic, Haiti-Haiti 2000-25=1975 comprobante, envios retiros depositos separados, requisitos agregar nuevo buscador Excel PDF CSV acciones remitente solo modificar borrar admin modificar borrar aprobado rechazado no coincide comprobante después aprobado');
+</script>
+
+
+<script>
+// V145 FIX - TABLERO 12 BOTONES ABREN VENTANILLA DE UNA VEZ - SEPARADO REAL - NO COMENTARIO
+window.abrirVentanillaTablero = function(ruta, tipo){
+  // Habilitar y abrir ventanilla inmediatamente - no comentario - realmente abre
+  if(tipo==='deposito'){
+    document.getElementById('modal-deposito-exacto').classList.remove('hidden');
+  } else if(tipo==='retiro' || ruta.toLowerCase().includes('retiro') || ruta.includes('HT → RD')){
+    document.getElementById('modal-retiro-compacto').classList.remove('hidden');
+    const sel=document.getElementById('retiro-ruta');
+    if(sel){
+      for(let i=0;i<sel.options.length;i++){
+        if(sel.options[i].text.includes(ruta.split(' ')[0]) || ruta.includes(sel.options[i].text.split(' ')[0])){
+          sel.selectedIndex=i;
+          break;
+        }
+      }
+      // Forzar exact match
+      for(let i=0;i<sel.options.length;i++){
+        if(sel.options[i].text===ruta){
+          sel.selectedIndex=i;
+          break;
+        }
+      }
+      if(window.calcularRetiro) calcularRetiro();
+    }
+  } else {
+    // Envio - por defecto
+    document.getElementById('modal-envio-compacto').classList.remove('hidden');
+    const sel=document.getElementById('envio-ruta');
+    if(sel){
+      let found=false;
+      for(let i=0;i<sel.options.length;i++){
+        if(sel.options[i].text===ruta){
+          sel.selectedIndex=i;
+          found=true;
+          break;
+        }
+      }
+      if(!found){
+        for(let i=0;i<sel.options.length;i++){
+          if(ruta.includes(sel.options[i].text.split(' ')[0]) || sel.options[i].text.includes(ruta.split(' ')[0])){
+            sel.selectedIndex=i;
+            break;
+          }
+        }
+      }
+      if(window.calcularEnvio) calcularEnvio();
+    }
+  }
+  console.log('Tablero clic abrió ventanilla: '+ruta+' tipo '+tipo+' - RD hacia Haiti NatCash primero abre ventanilla - 12 botones todos abren ventanilla');
+}
+
+// También al hacer clic en la primera transacción ejemplo RD hacia Haiti NatCash debe abrir ventanilla
+window.abrirEnvioDesdeEjemplo = function(){
+  document.getElementById('modal-envio-compacto').classList.remove('hidden');
+  const sel=document.getElementById('envio-ruta');
+  if(sel){
+    for(let i=0;i<sel.options.length;i++){
+      if(sel.options[i].text.includes('RD → HT Natcash')){
+        sel.selectedIndex=i;
+        break;
+      }
+    }
+    if(window.calcularEnvio) calcularEnvio();
+  }
+}
+

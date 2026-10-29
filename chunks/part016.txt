@@ -1,0 +1,100 @@
+// Asegurar que botones del tablero no estén deshabilitados - habilitar todo bien
+setTimeout(()=>{
+  document.querySelectorAll('button[onclick*="abrirVentanillaTablero"]').forEach(btn=>{
+    btn.disabled=false;
+    btn.style.pointerEvents='auto';
+    btn.style.opacity='1';
+    /* removed invalid empty class token */;
+  });
+},500);
+
+// Fix para remitentes deben aparecer comprobante después de ser aprobado - ya implementado pero reforzar
+const originalRenderPrincipal = window.renderPrincipal;
+window.renderPrincipal = function(){
+  if(originalRenderPrincipal) originalRenderPrincipal();
+  // Asegurar que comprobante aparece para remitentes después aprobado
+  document.querySelectorAll('#tabla-principal-body tr').forEach(tr=>{
+    const estadoEl = tr.querySelector('span');
+    if(estadoEl && estadoEl.textContent.includes('Aprobado')){
+      const accionesDiv = tr.querySelector('td:last-child div');
+      if(accionesDiv && !accionesDiv.innerHTML.includes('Comprobante')){
+        const id = tr.getAttribute('data-id');
+        if(id){
+          accionesDiv.innerHTML += ` <button onclick="verComprobante('${id}')" class="bg-orange-400 text-white px-2 py-1 rounded-full text-[9px]">Comprobante - Después aprobado - Remitente y admin - Todos</button>`;
+        }
+      }
+    }
+  });
+}
+
+console.log('V145 - Tablero 12 botones abren ventanilla de una vez - Envíos Retiros Depósitos separados real no comentario - RD hacia Haiti NatCash primero abre ventanilla - Remitentes comprobante después aprobado');
+</script>
+
+
+<script>
+// V146 - TODOS LOS CAMPOS DENTRO DE LA FOTO DEBEN FUNCIONAR - SUGERENCIA AL ESCRIBIR NUMERO REGISTRADO - DESGLOSE NETO COMISION TOTAL A RECIBIR X 2.10 GOURDES - MOVIBLE - NO FIJO
+
+// Base de datos de beneficiarios registrados para sugerencia
+window.BENEFICIARIOS_DB = [];
+
+window.REMITENTES_DB = [];
+
+// Función sugerencia al escribir número registrado
+window.mostrarSugerencias = function(inputId, listaId){
+  const input = document.getElementById(inputId);
+  if(!input) return;
+  const valor = input.value.toLowerCase();
+  const lista = document.getElementById(listaId);
+  if(!lista) return;
+  
+  if(valor.length < 2){
+    lista.classList.add('hidden');
+    return;
+  }
+  
+  const filtrados = window.BENEFICIARIOS_DB.filter(b=> 
+    b.nombre.toLowerCase().includes(valor) || 
+    b.telefono.toLowerCase().includes(valor) ||
+    b.id.toLowerCase().includes(valor)
+  );
+  
+  if(filtrados.length===0){
+    lista.classList.add('hidden');
+    return;
+  }
+  
+  lista.innerHTML='';
+  filtrados.slice(0,5).forEach(b=>{
+    const div=document.createElement('div');
+    div.className='p-2 hover:bg-blue-50 cursor-pointer border-b text-[11px] flex justify-between';
+    div.innerHTML=`<span class="font-bold">${b.nombre}</span><span class="text-gray-500">${b.telefono}</span>`;
+    div.onclick=function(){
+      input.value = b.nombre + ' - ' + b.telefono;
+      // Si es campo nombre manual, también llenar tel manual
+      if(inputId.includes('nombre-manual')){
+        const telInput = document.getElementById(inputId.replace('nombre-manual','tel-manual'));
+        if(telInput) telInput.value = b.telefono;
+      }
+      if(inputId.includes('tel-manual')){
+        const nombreInput = document.getElementById(inputId.replace('tel-manual','nombre-manual'));
+        if(nombreInput) nombreInput.value = b.nombre;
+      }
+      lista.classList.add('hidden');
+    };
+    lista.appendChild(div);
+  });
+  lista.classList.remove('hidden');
+}
+
+// Calcular envío con desglose neto comisión total a recibir x 2.10 gourdes haitianos
+window.calcularEnvio = function(){
+  const montoInput = document.getElementById('envio-monto');
+  const rutaSel = document.getElementById('envio-ruta');
+  if(!montoInput || !rutaSel) return;
+  
+  const monto = parseFloat(montoInput.value)||0;
+  const ruta = rutaSel.value||'';
+  let fee = 0;
+  let neto = 0;
+  let aRecibir = '';
+  let aRecibirValor = 0;

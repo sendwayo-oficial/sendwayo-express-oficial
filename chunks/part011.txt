@@ -1,0 +1,100 @@
+      </div>
+      <div>
+        <label class="block text-[11px] font-bold mb-1">Monto en Pesos (RD$)</label>
+        <input id="deposito-monto" type="number" placeholder="0.00" class="w-full border rounded-lg p-3 text-[13px]">
+      </div>
+      <div>
+        <label class="block text-[11px] font-bold mb-1">Notas</label>
+        <textarea id="deposito-notas" placeholder="Nota de referencia..." class="w-full border rounded-lg p-3 text-[13px] h-20"></textarea>
+      </div>
+      <div>
+        <label class="block text-[11px] font-bold mb-1">Cargar factura del depósito</label>
+        <div class="border rounded-lg p-3 flex items-center gap-2">
+          <label class="bg-gray-100 border px-3 py-1 rounded text-[11px] cursor-pointer"><input type="file" id="deposito-factura" class="hidden">Choose file</label>
+          <span id="deposito-file-name" class="text-[11px] text-gray-500">No file chosen</span>
+        </div>
+      </div>
+      <div class="flex gap-2 pt-2">
+        <button onclick="document.getElementById('modal-deposito-exacto').classList.add('hidden')" class="w-1/2 bg-red-600 text-white font-bold py-3 rounded-xl">✕ CANCELAR</button>
+        <button onclick="guardarDepositoExacto()" class="w-1/2 bg-[#1e3a5f] text-white font-bold py-3 rounded-xl">✓ GUARDAR</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+// V144 FIX - HABILITAR TODO TABLERO, DESGLOSE VENTANILLA, SEPARAR ENVIOS RETIROS DEPOSITO, HAITI-HAITI 2000 GOURDES FEE 25 = 1975 COMPROBANTE
+
+// Habilitar todos los campos del tablero principal que estaban inactivados
+window.habilitarTablero = function(){
+  document.querySelectorAll('button').forEach(btn=>{
+    if(btn.disabled){
+      btn.disabled = false;
+      btn.classList.remove('opacity-50', 'cursor-not-allowed');
+    }
+    btn.style.pointerEvents = 'auto';
+  });
+  // Habilitar botones de rutas
+  document.querySelectorAll('[onclick*="filtrarRuta"]').forEach(btn=>{
+    btn.disabled = false;
+    btn.classList.remove('opacity-50');
+    btn.style.opacity = '1';
+  });
+}
+
+setTimeout(window.habilitarTablero, 500);
+setTimeout(window.habilitarTablero, 2000);
+
+// Calcular envio con tarifa Haiti-Haiti 25
+window.calcularEnvio = function(){
+  const monto = parseFloat(document.getElementById('envio-monto')?.value)||0;
+  const ruta = document.getElementById('envio-ruta')?.value||'';
+  let fee = 0;
+  let neto = 0;
+  let aRecibir = '';
+  let tasa = 'Tasa 2.10';
+  
+  if(ruta.includes('HT → HT') || ruta.includes('HT->HT')){
+    // HAITI A HAITI: 2000 gourdes, cobra 25 pesos, monto a recibir 1975 - comprobante 1975
+    fee = 25;
+    neto = monto - fee;
+    aRecibir = neto.toFixed(2) + ' HTG - 1975 si 2000';
+    tasa = 'Haiti-Haiti fee 25 - 2000 = 1975 comprobante';
+  } else if(ruta.includes('RD → HT') || ruta.includes('RD->HT')){
+    fee = Math.round(monto*0.08);
+    neto = monto - fee;
+    aRecibir = (neto * 2.1).toFixed(2) + ' HTG';
+    tasa = 'Tasa 2.10';
+  } else if(ruta.includes('HT → RD') || ruta.includes('HT->RD')){
+    fee = Math.round(monto*0.08);
+    neto = monto - fee;
+    aRecibir = neto.toFixed(2) + ' DOP';
+    tasa = 'Tasa 2.10';
+  } else {
+    fee = Math.round(monto*0.08);
+    neto = monto - fee;
+    aRecibir = neto.toFixed(2) + ' DOP';
+    tasa = 'Fee 8%';
+  }
+  
+  document.getElementById('envio-monto-neto').innerText = 'RD$ ' + neto.toFixed(2);
+  document.getElementById('envio-comision').innerText = 'RD$ ' + fee.toFixed(2);
+  document.getElementById('envio-a-recibir').innerText = aRecibir;
+  document.getElementById('envio-tasa').innerText = tasa;
+}
+
+window.calcularRetiro = function(){
+  const monto = parseFloat(document.getElementById('retiro-monto')?.value)||0;
+  const ruta = document.getElementById('retiro-ruta')?.value||'';
+  let fee = 0;
+  let neto = 0;
+  let aRecibir = '';
+  
+  if(ruta.includes('HT → HT') || ruta.includes('HT->HT')){
+    fee = 25;
+    neto = monto - fee;
+    aRecibir = neto.toFixed(2) + ' HTG - 1975 si 2000 - comprobante 1975';
+  } else {
+    fee = Math.round(monto*0.08);
+    neto = monto - fee;

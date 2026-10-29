@@ -1,0 +1,100 @@
+  </div>
+</div>
+
+<!-- MODAL COMISIONES EXACTO FOTO - Módulo de Recargar / Retirar Comisión (Wallet) -->
+<div id="modal-comisiones-exacto" class="hidden fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+    <button onclick="document.getElementById('modal-comisiones-exacto').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 text-xl">✕</button>
+    <h3 class="font-bold text-[15px] mb-1 flex items-center gap-2">💰 Módulo de Recargar / Retirar Comisión (Wallet)</h3>
+    <p class="text-[11px] text-gray-500 mb-4">Gestione la recarga o retiro de sus comisiones acumuladas de forma inmediata.</p>
+    <div class="space-y-4">
+      <div>
+        <label class="block text-[11px] font-bold mb-1">Método de pago / Retiro</label>
+        <select id="com-metodo-exacto" class="w-full border rounded-lg p-3 text-[13px] font-bold bg-gray-50">
+          <option>Wallet (Recargar balance / Retiro comisión)</option>
+          <option>Banco - Transferencia</option>
+          <option>Efectivo</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-[11px] font-bold mb-1">Moneda</label>
+        <select id="com-moneda-exacto" class="w-full border rounded-lg p-3 text-[13px] font-bold">
+          <option>Pesos Dominicanos (RD$)</option>
+          <option>Gourdes Haitianos (HTG)</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-[11px] font-bold mb-1">Monto (RD$ / HTG)</label>
+        <input id="com-monto-exacto" type="number" placeholder="0.00" class="w-full border rounded-lg p-3 text-[13px]">
+      </div>
+      <div>
+        <label class="block text-[11px] font-bold mb-1">Notas / Detalle</label>
+        <textarea id="com-notas-exacto" placeholder="Escriba aquí alguna nota..." class="w-full border rounded-lg p-3 text-[13px] h-20"></textarea>
+      </div>
+      <button onclick="guardarComisionExacto()" class="w-full bg-green-700 text-white font-bold py-3 rounded-xl">✓ Procesar Operación de Comisión</button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+// PATCH V142 - NO CAMBIAR OTRAS COSAS - SOLO RECARGAS, PAQUETIKOS, FACTURAS, COMISIONES EXACTO COMO FOTOS - HAZLO BIEN BIEN BIEN
+
+// NO CAMBIAR OTROS MODULOS - SUPERBIEN COMO ESTAN - SOLO ESTOS 3 CAMPOS DEBEN TENER REQUISITOS COMO FOTO
+
+window.seleccionarMontoRecarga = function(monto){
+  const el = document.getElementById('rec-monto-libre-exacto');
+  if(el) el.value = monto;
+}
+
+window.guardarRecargaExacto = function(){
+  const compania = document.getElementById('rec-compania-exacto')?.value || 'Claro';
+  const numero = document.getElementById('rec-numero-exacto')?.value || '8290000000';
+  const montoLibre = document.getElementById('rec-monto-libre-exacto')?.value || '100';
+  const montoNum = parseFloat(montoLibre) || 100;
+  if(!numero || numero.length < 7){ alert('Ponga número de celular obligatorio'); return; }
+  if(!(montoNum>0)){ window.sendwayoShowInlineNotice('Introduzca un monto válido.', 'error'); return; }
+  
+  // Descontar balance inmediato
+  if(currentUser.id==='ADMINADMIN') ADMIN_BAL.DOP-=montoNum;
+  else { const rem=REMITENTES.find(r=>r.id===currentUser.id); if(rem) rem.balances.DOP-=montoNum; }
+  
+  // Comprobante limpio sin comentario - 100 = 100 DOP sin quitar nada - interno queda entre nosotros
+  const nueva={
+    id:'SW-REC-'+Date.now().toString().slice(-6),
+    fecha:new Date().toLocaleString('es-DO'),
+    tipo:'Recarga',
+    ruta:'Recarga '+compania+' - 100 pesos',
+    rutaExacta:'Recarga '+compania+' - '+montoNum+' pesos entero - '+compania+' dice '+compania,
+    monto:montoNum+' DOP',
+    montoValue:montoNum,
+    fee:5,
+    neto:montoNum,
+    feeText:'Fee 5: 5',
+    moneda:'DOP',
+    beneficiario:numero,
+    beneficiarioTel:numero,
+    compania:compania,
+    estado:'Pendiente',
+    timestamp:Date.now(),
+    creadorId:currentUser.id,
+    remitenteId:currentUser.id,
+    montoRecibido: montoNum+' DOP'
+  };
+  TRANSACCIONES.unshift(nueva);
+  renderPrincipal();
+  const viewActual=document.querySelector('.view:not(.hidden)');
+  if(viewActual && viewActual.id!=='view-tablero') renderModulo(viewActual.id.replace('view-',''));
+  document.getElementById('modal-recargas-exacto').classList.add('hidden');
+  addNotificacion('Nueva recarga '+compania+' '+montoNum+' DOP - Pendiente - Comprobante limpio '+montoNum+' DOP sin comentario', 'Recarga');
+  alert('✅ Recarga creada '+montoNum+' DOP - '+compania+' - '+numero+' - Comprobante limpio sin comentario - Interno queda entre nosotros - Ahora de una vez en recarga debes ver pendiente');
+}
+
+window.guardarPaquetikoExacto = function(){
+  const compania = document.getElementById('paq-compania-exacto')?.value || 'Claro';
+  const numero = document.getElementById('paq-numero-exacto')?.value || '8290000000';
+  const plan = document.getElementById('paq-plan-exacto')?.value || 'Plan';
+  const montoManual = document.getElementById('paq-monto-manual-exacto')?.value || '150';
+  let montoNum = 150;
+  const match = montoManual.match(/(\d+)/);
+  if(match) montoNum = parseFloat(match[1]);

@@ -1,0 +1,100 @@
+        <label class="block font-bold text-gray-600 mb-1 uppercase">RUTA</label>
+        <select id="envio-ruta" class="w-full border rounded-lg p-2.5 font-bold">
+          <option>RD → HT Natcash (8%)</option>
+          <option>RD → HT MonCash (8%)</option>
+          <option>HT → RD Natcash (8%)</option>
+          <option>HT → RD MonCash (8%)</option>
+          <option>HT → HT Natcash (25 HTG fee)</option>
+          <option>HT → HT MonCash (25 HTG fee)</option>
+          <option>RD → RD (8%)</option>
+          <option>RD → USA (8%)</option>
+          <option>USA → RD (8%)</option>
+        </select>
+      </div>
+      <div>
+        <label class="block font-bold text-gray-600 mb-1 uppercase">REMITENTE (ADMIN PUEDE ELEGIR A QUIEN DEBITAR) <span class="text-blue-600">[+ AGREGAR]</span></label>
+        <select id="envio-remitente" class="w-full border rounded-lg p-2.5 font-bold"><option value=\"\">Seleccione un remitente</option></select>
+      </div>
+      <div>
+        <label class="block font-bold text-gray-600 mb-1 uppercase">MONTO</label>
+        <input id="envio-monto" type="number" placeholder="Ej: 2000" class="w-full border rounded-lg p-2.5 font-bold" oninput="calcularEnvio()">
+        <div class="text-[10px] text-blue-600 mt-1">Aplica 8% comisión - Haiti-Haiti 25 pesos fee</div>
+      </div>
+      <div class="bg-blue-50 border border-blue-100 rounded-xl p-3">
+        <label class="block font-bold text-[#1e3a5f] mb-2 text-[11px]">BENEFICIARIO - SELECCIÓN + ESCRITURA MANUAL (UNA SOLA VEZ)</label>
+        <select id="envio-beneficiario" class="w-full border rounded-lg p-2.5 font-bold mb-2"><option value=\"\">Seleccione un beneficiario registrado</option></select>
+        <input id="envio-ben-nombre-manual" type="text" placeholder="Nombre manual (opcional) - una sola vez" class="w-full border rounded-lg p-2.5 mb-2">
+        <input id="envio-ben-tel-manual" type="text" placeholder="Tel manual (opcional)" class="w-full border rounded-lg p-2.5">
+        <div class="text-[9px] text-gray-500 mt-1">Si escribe manual, se usa ese. Registro automático en sistema.</div>
+        <button onclick="agregarBeneficiarioManual()" class="mt-2 bg-green-600 text-white px-3 py-1 rounded-full text-[10px] font-bold">+ Agregar Beneficiario</button>
+      </div>
+      <div class="bg-slate-800 text-white rounded-xl p-3 text-[11px] space-y-1">
+        <div class="flex justify-between"><span>MONTO NETO</span><span id="envio-monto-neto" class="font-bold">RD$ 0.00</span></div>
+        <div class="flex justify-between"><span>COMISION</span><span id="envio-comision" class="font-bold">RD$ 0.00</span></div>
+        <div class="flex justify-between border-t border-white/20 pt-1"><span class="text-yellow-400 font-bold">A RECIBIR</span><span id="envio-a-recibir" class="font-bold text-yellow-400">0.00 HTG</span></div>
+        <div class="flex justify-between text-[9px] opacity-60"><span>TASA/TARIFA</span><span id="envio-tasa">Tasa 2.10 - Haiti-Haiti fee 25</span></div>
+      </div>
+      <div class="flex gap-2 pt-2">
+        <button onclick="document.getElementById('modal-envio-compacto').classList.add('hidden')" class="w-1/2 bg-red-600 text-white font-bold py-3 rounded-xl">✕ CANCELAR</button>
+        <button onclick="guardarEnvioCompacto()" class="w-1/2 bg-[#1e3a5f] text-white font-bold py-3 rounded-xl">✓ GUARDAR (Pendiente)</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL AGREGAR RETIRO - COMPACTO - EXACTO FOTO 90807a.png -->
+<div id="modal-retiro-compacto" class="hidden fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl max-w-sm w-full p-4 shadow-2xl relative max-h-[92vh] overflow-y-auto">
+    <button onclick="document.getElementById('modal-retiro-compacto').classList.add('hidden')" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 font-bold text-lg">✕</button>
+    <h3 class="text-[14px] font-bold text-slate-900 mb-3 flex items-center gap-2">💸 Agregar Retiro - Compacto</h3>
+    <div class="space-y-2 text-[11px]">
+      <div>
+        <label class="block font-bold text-gray-600 mb-1 uppercase">RUTA RETIRO</label>
+        <select id="retiro-ruta" class="w-full border rounded-lg p-2.5 font-bold">
+          <option>RD → HT Natcash (8%) Retiro</option>
+          <option>HT → RD Natcash (8%) Retiro</option>
+          <option>HT → HT Natcash (25 HTG fee) Retiro</option>
+          <option>RD → RD (8%) Retiro</option>
+        </select>
+      </div>
+      <div>
+        <label class="block font-bold text-gray-600 mb-1 uppercase">REMITENTE (ADMIN PUEDE ELEGIR A QUIEN DEBITAR)</label>
+        <select id="retiro-remitente" class="w-full border rounded-lg p-2.5 font-bold"><option value=\"\">Seleccione un remitente</option></select>
+      </div>
+      <div>
+        <label class="block font-bold text-gray-600 mb-1 uppercase">MONTO RETIRO</label>
+        <input id="retiro-monto" type="number" placeholder="Ej: 2000" class="w-full border rounded-lg p-2.5 font-bold" oninput="calcularRetiro()">
+        <div class="text-[10px] text-blue-600 mt-1">Aplica 8% comisión - Haiti-Haiti 25</div>
+      </div>
+      <div class="bg-blue-50 border border-blue-100 rounded-xl p-3">
+        <label class="block font-bold text-[#1e3a5f] mb-2 text-[11px]">BENEFICIARIO RETIRO - SELECCIÓN + ESCRITURA MANUAL</label>
+        <select id="retiro-beneficiario" class="w-full border rounded-lg p-2.5 font-bold mb-2"><option value=\"\">Seleccione un beneficiario registrado</option></select>
+        <input id="retiro-ben-nombre-manual" type="text" placeholder="Nombre manual (opcional)" class="w-full border rounded-lg p-2.5 mb-2">
+        <input id="retiro-ben-tel-manual" type="text" placeholder="Tel manual (opcional)" class="w-full border rounded-lg p-2.5">
+      </div>
+      <div class="bg-slate-800 text-white rounded-xl p-3 text-[11px] space-y-1">
+        <div class="flex justify-between"><span>MONTO NETO</span><span id="retiro-monto-neto" class="font-bold">RD$ 0.00</span></div>
+        <div class="flex justify-between"><span>COMISION</span><span id="retiro-comision" class="font-bold">RD$ 0.00</span></div>
+        <div class="flex justify-between border-t border-white/20 pt-1"><span class="text-yellow-400 font-bold">A RECIBIR</span><span id="retiro-a-recibir" class="font-bold text-yellow-400">0.00 HTG</span></div>
+      </div>
+      <div class="flex gap-2 pt-2">
+        <button onclick="document.getElementById('modal-retiro-compacto').classList.add('hidden')" class="w-1/2 bg-red-600 text-white font-bold py-3 rounded-xl">✕ CANCELAR</button>
+        <button onclick="guardarRetiroCompacto()" class="w-1/2 bg-[#1e3a5f] text-white font-bold py-3 rounded-xl">✓ GUARDAR (Pendiente)</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NUEVO DEPOSITO - EXACTO FOTO 7515d7.png -->
+<div id="modal-deposito-exacto" class="hidden fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+    <button onclick="document.getElementById('modal-deposito-exacto').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 text-xl">✕</button>
+    <h3 class="font-bold text-[16px] mb-4 flex items-center gap-2">🏦 NUEVO DEPOSITO</h3>
+    <div class="space-y-4 text-[12px]">
+      <div>
+        <label class="block text-[11px] font-bold mb-1">Cuentas</label>
+        <select id="deposito-cuenta" class="w-full border rounded-lg p-3 text-[13px] font-bold"><option value=\"\">Cargando cuentas registradas…</option></select>
+      </div>
+      <div>
+        <label class="block text-[11px] font-bold mb-1">Remitente Depositante</label>
+        <select id="deposito-remitente" class="w-full border rounded-lg p-3 text-[13px] font-bold"><option value=\"\">Seleccione un remitente depositante</option></select>

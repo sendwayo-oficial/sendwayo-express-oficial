@@ -1,0 +1,100 @@
+    aRecibir = neto.toFixed(2) + (ruta.includes('HT')?' HTG':' DOP');
+  }
+  
+  document.getElementById('retiro-monto-neto').innerText = 'RD$ ' + neto.toFixed(2);
+  document.getElementById('retiro-comision').innerText = 'RD$ ' + fee.toFixed(2);
+  document.getElementById('retiro-a-recibir').innerText = aRecibir;
+}
+
+window.guardarEnvioCompacto = function(){
+  const ruta = document.getElementById('envio-ruta')?.value||'RD → HT Natcash (8%)';
+  const remitente = document.getElementById('envio-remitente')?.value||'REM-DANIA';
+  const monto = parseFloat(document.getElementById('envio-monto')?.value)||0;
+  const benSel = document.getElementById('envio-beneficiario')?.value||'Beneficiario';
+  const benNombreManual = document.getElementById('envio-ben-nombre-manual')?.value||'';
+  const benTelManual = document.getElementById('envio-ben-tel-manual')?.value||'';
+  
+  if(!(monto>0)){ window.sendwayoShowInlineNotice('Introduzca un monto válido.', 'error'); return; }
+  
+  let fee = 0;
+  let neto = 0;
+  let montoRecibido = '';
+  let moneda = 'DOP';
+  
+  if(ruta.includes('HT → HT') || ruta.includes('HT->HT')){
+    // HAITI A HAITI 2000 gourdes = 25 fee = 1975 comprobante - por favor por favor y por favor
+    fee = 25;
+    neto = monto - fee;
+    montoRecibido = neto.toFixed(2) + ' HTG';
+    moneda = 'HTG';
+  } else if(ruta.includes('RD → HT')){
+    fee = Math.round(monto*0.08);
+    neto = monto - fee;
+    montoRecibido = (neto * 2.1).toFixed(2) + ' HTG';
+    moneda = 'HTG';
+  } else {
+    fee = Math.round(monto*0.08);
+    neto = monto - fee;
+    montoRecibido = neto.toFixed(2) + ' DOP';
+    moneda = 'DOP';
+  }
+  
+  if(currentUser.id==='ADMINADMIN') ADMIN_BAL.DOP-=monto;
+  else { const rem=REMITENTES.find(r=>r.id===currentUser.id); if(rem) rem.balances.DOP-=monto; }
+  
+  const beneficiarioFinal = benNombreManual || benSel;
+  const telFinal = benTelManual || benSel;
+  
+  const nueva={
+    id:'SW-ENV-'+Date.now().toString().slice(-6),
+    fecha:new Date().toLocaleString('es-DO'),
+    tipo:'Envío',
+    ruta:ruta,
+    rutaExacta: 'Ruta: '+ruta+' - Remitente: '+remitente+' - Beneficiario: '+beneficiarioFinal,
+    monto:monto+' '+(ruta.includes('HT → HT')?'HTG':'DOP'),
+    montoValue:monto,
+    fee:fee,
+    neto:neto,
+    feeText:'Fee: '+fee+' Neto: '+neto + (ruta.includes('HT → HT')?' - Haiti-Haiti 25 = 1975':''),
+    moneda:moneda,
+    beneficiario:beneficiarioFinal,
+    beneficiarioTel:telFinal,
+    estado:'Pendiente',
+    timestamp:Date.now(),
+    creadorId:currentUser.id,
+    remitenteId:currentUser.id,
+    montoRecibido:montoRecibido
+  };
+  
+  TRANSACCIONES.unshift(nueva);
+  renderPrincipal();
+  const viewActual=document.querySelector('.view:not(.hidden)');
+  if(viewActual && viewActual.id!=='view-tablero') renderModulo(viewActual.id.replace('view-',''));
+  document.getElementById('modal-envio-compacto').classList.add('hidden');
+  addNotificacion('Nuevo envío '+monto+' - '+montoRecibido+' - Pendiente - Ventanilla desglose', 'Envío');
+  alert('✅ Envío creado '+monto+' - A recibir: '+montoRecibido+' - '+(ruta.includes('HT → HT')?'HAITI-HAITI 2000 gourdes fee 25 = 1975 comprobante':'')); 
+}
+
+window.guardarRetiroCompacto = function(){
+  const ruta = document.getElementById('retiro-ruta')?.value||'HT → RD Natcash (8%) Retiro';
+  const monto = parseFloat(document.getElementById('retiro-monto')?.value)||0;
+  const benSel = document.getElementById('retiro-beneficiario')?.value||'Beneficiario';
+  
+  if(!(monto>0)){ window.sendwayoShowInlineNotice('Introduzca un monto válido.', 'error'); return; }
+  
+  let fee = 0;
+  let neto = 0;
+  let montoRecibido = '';
+  
+  if(ruta.includes('HT → HT')){
+    fee = 25;
+    neto = monto - fee;
+    montoRecibido = neto.toFixed(2) + ' HTG - 1975 si 2000';
+  } else {
+    fee = Math.round(monto*0.08);
+    neto = monto - fee;
+    montoRecibido = neto.toFixed(2) + ' DOP';
+  }
+  
+  if(currentUser.id==='ADMINADMIN') ADMIN_BAL.DOP-=monto;
+  else { const rem=REMITENTES.find(r=>r.id===currentUser.id); if(rem) rem.balances.DOP-=monto; }

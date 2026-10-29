@@ -1,0 +1,100 @@
+      <div>
+        <label class="block text-[11px] font-bold text-gray-700 mb-1">Compañía Telefónica</label>
+        <select id="rec-compania-exacto" class="w-full border rounded-lg p-3 text-[13px] font-bold bg-white">
+          <option>Claro</option>
+          <option>Viva</option>
+          <option>Altice</option>
+          <option>Digicel</option>
+          <option>Natcom</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-[11px] font-bold text-gray-700 mb-1">Número de Celular</label>
+        <input id="rec-numero-exacto" type="tel" placeholder="+1-829-000-0000" class="w-full border rounded-lg p-3 text-[13px]">
+      </div>
+      <div>
+        <label class="block text-[11px] font-bold text-gray-700 mb-2">Montos Sugeridos (RD$)</label>
+        <div class="grid grid-cols-3 gap-2">
+          <button onclick="seleccionarMontoRecarga(50)" class="border rounded-lg p-2 text-[13px] font-bold hover:bg-blue-50">50</button>
+          <button onclick="seleccionarMontoRecarga(100)" class="border rounded-lg p-2 text-[13px] font-bold hover:bg-blue-50">100</button>
+          <button onclick="seleccionarMontoRecarga(150)" class="border rounded-lg p-2 text-[13px] font-bold hover:bg-blue-50">150</button>
+          <button onclick="seleccionarMontoRecarga(160)" class="border rounded-lg p-2 text-[13px] font-bold hover:bg-blue-50">160</button>
+          <button onclick="seleccionarMontoRecarga(170)" class="border rounded-lg p-2 text-[13px] font-bold hover:bg-blue-50">170</button>
+          <button onclick="seleccionarMontoRecarga(200)" class="border rounded-lg p-2 text-[13px] font-bold hover:bg-blue-50">200</button>
+          <button onclick="seleccionarMontoRecarga(225)" class="border rounded-lg p-2 text-[13px] font-bold hover:bg-blue-50">225</button>
+          <button onclick="seleccionarMontoRecarga(270)" class="border rounded-lg p-2 text-[13px] font-bold hover:bg-blue-50">270</button>
+          <button onclick="seleccionarMontoRecarga(300)" class="border rounded-lg p-2 text-[13px] font-bold hover:bg-blue-50">300</button>
+        </div>
+        <input id="rec-monto-libre-exacto" type="number" placeholder="Monto libre RD$" class="w-full border rounded-lg p-3 text-[13px] mt-2">
+      </div>
+      <button onclick="guardarRecargaExacto()" class="w-full bg-[#0f2440] text-white font-bold py-3 rounded-xl hover:bg-slate-800 transition">✓ Guardar Recarga 5%</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PAQUETIKOS EXACTO FOTO - Paquetikos - 3 Compañías -->
+<div id="modal-paquetikos-exacto" class="hidden fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl relative">
+    <button onclick="document.getElementById('modal-paquetikos-exacto').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 text-xl">✕</button>
+    <h3 class="font-bold text-[15px] mb-4 flex items-center gap-2">📦 Paquetikos - 3 Compañías</h3>
+    <div class="space-y-3">
+      <div>
+        <label class="block text-[11px] font-bold uppercase mb-1">COMPAÑÍA (SOLO 3)</label>
+        <select id="paq-compania-exacto" class="w-full border rounded-lg p-3 text-[13px] font-bold">
+          <option>Claro</option>
+          <option>Viva</option>
+          <option>Altice</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-[11px] font-bold uppercase mb-1">NÚMERO DE CELULAR</label>
+        <input id="paq-numero-exacto" type="tel" placeholder="+1-829... / +509..." class="w-full border rounded-lg p-3 text-[13px]">
+      </div>
+      <div>
+        <label class="block text-[11px] font-bold uppercase mb-1">PLANES (SELECCIONAR)</label>
+        <select id="paq-plan-exacto" class="w-full border rounded-lg p-3 text-[13px]">
+          <option>-- Seleccione plan --</option>
+          <option>Un día libre 65 pesos</option>
+          <option>Tres días 120 pesos</option>
+          <option>5 días libres 160 pesos</option>
+          <option>7 días libres 200 pesos</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-[11px] font-bold uppercase mb-1">PLAN / MONTO (PUEDE ESCRIBIR A MANO)</label>
+        <input id="paq-monto-manual-exacto" type="text" placeholder="Ej: Un día libre 65 pesos, Tres días 120 pesos..." class="w-full border rounded-lg p-3 text-[13px]">
+      </div>
+      <div class="flex gap-2 pt-2">
+        <button onclick="document.getElementById('modal-paquetikos-exacto').classList.add('hidden')" class="w-1/2 bg-red-600 text-white font-bold py-3 rounded-lg">Cancelar</button>
+        <button onclick="guardarPaquetikoExacto()" class="w-1/2 bg-[#1e3a5f] text-white font-bold py-3 rounded-lg">Guardar (Pendiente)</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PAGO FACTURAS Y SERVICIOS EXACTO -->
+<div id="modal-facturas-exacto" class="hidden fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl relative">
+    <button onclick="document.getElementById('modal-facturas-exacto').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 text-xl">✕</button>
+    <h3 class="font-bold text-[15px] mb-4">🧾 Pago de Facturas y Servicios - 5%</h3>
+    <div class="space-y-3">
+      <div>
+        <label class="block text-[11px] font-bold uppercase mb-1">SERVICIO / COMPAÑÍA</label>
+        <select id="fact-compania-exacto" class="w-full border rounded-lg p-3 text-[13px] font-bold">
+          <option>Claro - Factura</option>
+          <option>Altice - Factura</option>
+          <option>Viva - Factura</option>
+          <option>Edenorte</option>
+          <option>Edesur</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-[11px] font-bold uppercase mb-1">NÚMERO DE CONTRATO / NIC</label>
+        <input id="fact-numero-exacto" type="text" placeholder="Ej: 123456789" class="w-full border rounded-lg p-3 text-[13px]">
+      </div>
+      <div>
+        <label class="block text-[11px] font-bold uppercase mb-1">MONTO (RD$)</label>
+        <input id="fact-monto-exacto" type="number" placeholder="Ej: 500 RD$" class="w-full border rounded-lg p-3 text-[13px]">
+      </div>
+      <button onclick="guardarFacturaExacto()" class="w-full bg-[#0f2440] text-white font-bold py-3 rounded-xl">✓ Guardar Factura 5%</button>
+    </div>

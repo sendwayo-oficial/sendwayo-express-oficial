@@ -1,0 +1,100 @@
+  let tasa = '';
+  let monedaRecibir = 'HTG';
+  
+  if(ruta.includes('HT → HT') || ruta.includes('HT->HT')){
+    // HAITI A HAITI: 2000 gourdes, cobra 25, 1975 comprobante
+    fee = 25;
+    neto = monto - fee;
+    aRecibirValor = neto;
+    aRecibir = neto.toFixed(2) + ' HTG - 1975 si 2000 - Comprobante 1975';
+    tasa = 'Tarifa Haiti-Haiti 25 - Si 2000 = 1975 HTG comprobante';
+    monedaRecibir = 'HTG';
+  } else if(ruta.includes('RD → HT')){
+    // RD a Haiti: 8% comisión, neto x 2.10 = gourdes
+    fee = Math.round(monto*0.08);
+    neto = monto - fee;
+    aRecibirValor = neto * 2.10;
+    aRecibir = aRecibirValor.toFixed(2) + ' HTG';
+    tasa = 'Tasa 2.10 - RD→HT ' + monto + ' - 8% = ' + neto + ' x 2.10 = ' + aRecibirValor.toFixed(2) + ' HTG factura';
+    monedaRecibir = 'HTG';
+  } else if(ruta.includes('HT → RD')){
+    fee = Math.round(monto*0.08);
+    neto = monto - fee;
+    aRecibirValor = neto / 2.10; // HTG a DOP
+    aRecibir = neto.toFixed(2) + ' HTG → ' + aRecibirValor.toFixed(2) + ' DOP';
+    tasa = 'Tasa 2.10 inversa';
+    monedaRecibir = 'DOP';
+  } else if(ruta.includes('RD → RD')){
+    fee = Math.round(monto*0.08);
+    neto = monto - fee;
+    aRecibirValor = neto;
+    aRecibir = neto.toFixed(2) + ' DOP';
+    tasa = 'RD→RD 8% fee';
+    monedaRecibir = 'DOP';
+  } else {
+    fee = Math.round(monto*0.08);
+    neto = monto - fee;
+    aRecibirValor = neto;
+    aRecibir = neto.toFixed(2) + ' DOP';
+    tasa = 'Fee 8%';
+    monedaRecibir = 'DOP';
+  }
+  
+  const netoEl = document.getElementById('envio-monto-neto');
+  const comEl = document.getElementById('envio-comision');
+  const recibirEl = document.getElementById('envio-a-recibir');
+  const tasaEl = document.getElementById('envio-tasa');
+  
+  if(netoEl) netoEl.innerText = 'RD$ ' + neto.toFixed(2) + ' Neto';
+  if(comEl) comEl.innerText = 'RD$ ' + fee.toFixed(2) + ' Comisión ' + (ruta.includes('HT → HT')?'25 pesos':'8%');
+  if(recibirEl) recibirEl.innerText = aRecibir;
+  if(tasaEl) tasaEl.innerText = tasa;
+  
+  // Guardar valores para factura
+  if(montoInput){
+    montoInput.dataset.neto = neto;
+    montoInput.dataset.fee = fee;
+    montoInput.dataset.aRecibir = aRecibirValor;
+    montoInput.dataset.monedaRecibir = monedaRecibir;
+  }
+}
+
+// Calcular retiro igual
+window.calcularRetiro = function(){
+  const montoInput = document.getElementById('retiro-monto');
+  const rutaSel = document.getElementById('retiro-ruta');
+  if(!montoInput || !rutaSel) return;
+  
+  const monto = parseFloat(montoInput.value)||0;
+  const ruta = rutaSel.value||'';
+  let fee = 0;
+  let neto = 0;
+  let aRecibir = '';
+  
+  if(ruta.includes('HT → HT')){
+    fee = 25;
+    neto = monto - fee;
+    aRecibir = neto.toFixed(2) + ' HTG - 1975 si 2000 comprobante';
+  } else if(ruta.includes('RD → HT')){
+    fee = Math.round(monto*0.08);
+    neto = monto - fee;
+    aRecibir = (neto * 2.10).toFixed(2) + ' HTG';
+  } else {
+    fee = Math.round(monto*0.08);
+    neto = monto - fee;
+    aRecibir = neto.toFixed(2) + ' DOP';
+  }
+  
+  const netoEl = document.getElementById('retiro-monto-neto');
+  const comEl = document.getElementById('retiro-comision');
+  const recibirEl = document.getElementById('retiro-a-recibir');
+  
+  if(netoEl) netoEl.innerText = 'RD$ ' + neto.toFixed(2);
+  if(comEl) comEl.innerText = 'RD$ ' + fee.toFixed(2);
+  if(recibirEl) recibirEl.innerText = aRecibir;
+  
+  if(montoInput){
+    montoInput.dataset.neto = neto;
+    montoInput.dataset.fee = fee;
+    montoInput.dataset.aRecibir = aRecibir;
+  }

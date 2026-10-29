@@ -1,0 +1,100 @@
+    <button onclick="showView('remitentes')" class="w-full text-left px-3 py-2.5 hover:bg-white/5 flex items-center gap-2"><span>👤</span> Expéditeurs (15 Remitentes)</button>
+    <button onclick="showView('agentes')" class="w-full text-left px-3 py-2.5 hover:bg-white/5 flex items-center gap-2"><span>👔</span> Agentes</button>
+    <button onclick="showView('recargas')" class="w-full text-left px-3 py-2.5 hover:bg-white/5 flex items-center gap-2 bg-yellow-500/20"><span>📱</span> Recargas</button>
+    <button onclick="showView('paquetikos')" class="w-full text-left px-3 py-2.5 hover:bg-white/5 flex items-center gap-2 bg-yellow-500/20"><span>📦</span> Paquetikos</button>
+    <button onclick="showView('recepcion')" class="w-full text-left px-3 py-2.5 hover:bg-white/5 flex items-center gap-2"><span>🎁</span> Recepción envío y distribución</button>
+    <button onclick="showView('facturas')" class="w-full text-left px-3 py-2.5 hover:bg-white/5 flex items-center gap-2"><span>🧾</span> Pago de facturas y servicios</button>
+    <button onclick="showView('mibanco')" class="w-full text-left px-3 py-2.5 hover:bg-white/5 flex items-center gap-2"><span>🏦</span> Mi banco / Mi cuenta bancaria</button>
+    <button onclick="showView('cuentas')" class="w-full text-left px-3 py-2.5 hover:bg-white/5 flex items-center gap-2"><span>🏛️</span> Cuentas bancarias y depósitos</button>
+    <button onclick="showView('ajustes')" class="w-full text-left px-3 py-2.5 hover:bg-white/5 flex items-center gap-2"><span>⚙️</span> Ajustes / créditos pendientes 0</button>
+    <button onclick="showView('creditos')" class="w-full text-left px-3 py-2.5 hover:bg-white/5 flex items-center gap-2"><span>💳</span> Créditos pendientes</button>
+    <button onclick="showView('bienvenida')" class="w-full text-left px-3 py-2.5 hover:bg-white/5 flex items-center gap-2"><span>👋</span> Solicitudes de bienvenida</button>
+    <button onclick="showView('comisiones')" class="w-full text-left px-3 py-2.5 hover:bg-white/5 flex items-center gap-2"><span>💸</span> Pago y retiro de comisiones</button>
+    <button onclick="showView('conciliacion')" class="w-full text-left px-3 py-2.5 hover:bg-white/5 flex items-center gap-2"><span>🏦</span> Conciliacion Financiera</button>
+    <button onclick="showView('reportes')" class="w-full text-left px-3 py-2.5 hover:bg-white/5 flex items-center gap-2"><span>📊</span> Reportes</button>
+    <button onclick="showView('informes')" class="w-full text-left px-3 py-2.5 hover:bg-white/5 flex items-center gap-2"><span>📑</span> Informes Semanal / 15 días / Mes</button>
+    <button type="button" onclick="window.showView('transferencia')" class="w-full text-left px-3 py-2.5 hover:bg-white/5 flex items-center gap-2"><span>💵</span> Pago de transferencia</button>
+    <button type="button" onclick="window.showView('secretas')" class="w-full text-left px-3 py-2.5 hover:bg-white/5 flex items-center gap-2"><span>🔒</span> ADMINISTRACION Informaciones secretas</button>
+    <button type="button" onclick="window.showView('perfil')" class="w-full text-left px-3 py-2.5 hover:bg-white/5 flex items-center gap-2"><span>👤</span> Mi perfil ADMIN</button>
+    <button type="button" onclick="window.cerrarSesion()" class="w-full text-left px-3 py-2.5 hover:bg-white/5 flex items-center gap-2"><span>🚪</span> Cerrar sesión</button>
+  </div>
+
+  <div class="flex-1 p-4">
+    <div class="grid grid-cols-4 gap-3 mb-4">
+      <div class="bg-[#1e3a5f] text-white rounded-xl p-4">
+        <div class="text-[9px] tracking-widest opacity-70">BALANCE EN GOURDES (HTG)</div>
+        <div class="text-[18px] font-extrabold mt-2">0 HTG</div>
+        <div class="text-[10px] opacity-70 mt-1">5 Agentes - Bultos - Compartido</div>
+        <div class="text-[9px] mt-2 opacity-60">Solo 1 vez - tablero limpio ✅</div>
+      </div>
+      <div class="bg-white rounded-xl p-4 border shadow-sm">
+        <div class="text-[8px] tracking-widest text-gray-500">BALANCE EN PESOS DOP (RDS) - NUTRIDO POR COMISIONES<br>15 Remitentes - 50% / 50% RD$1,250</div>
+        <div class="text-[16px] font-extrabold mt-2 text-[#1e3a5f]">RD$ <span id="card-bal-rd">1,250</span></div>
+        <div class="text-[9px] text-gray-500 mt-1">Solo 1 vez - No duplicado</div>
+      </div>
+      <div class="bg-white rounded-xl p-4 border shadow-sm">
+        <div class="text-[8px] tracking-widest text-gray-500">GANANCIA DEL DIA RD$ 0.00 Desglosada Rec / Pag / Env 8% / Ret 8%<br>/ Serv 5%</div>
+        <div class="text-[9px] mt-3 space-y-1">
+          <div class="flex justify-between"><span>Recargas 0 (5%)</span><span>0.00</span></div>
+          <div class="flex justify-between"><span>Paquetikos 0 (5%)</span><span>0.00</span></div>
+          <div class="flex justify-between"><span>Envios 0.00 (8%)</span><span>0.00</span></div>
+          <div class="flex justify-between"><span>Retiros 0 (8%)</span><span>0.00</span></div>
+          <div class="flex justify-between"><span>Servicios 0 (8%)</span><span>0.00</span></div>
+          <div class="flex justify-between font-bold border-t mt-2 pt-1"><span>Total</span><span>0.00</span></div>
+        </div>
+      </div>
+      <div class="bg-orange-400 rounded-xl p-4 text-white">
+        <div class="text-[9px] tracking-widest">TOTAL COMISIONES / PENDIENTES RD$ 0.00</div>
+        <div class="text-[16px] font-extrabold mt-2">RD$ 0.00</div>
+        <div class="text-[10px] mt-1">3 Pendientes - Control Admin</div>
+        <div class="text-[9px] mt-2 opacity-80">Ganancia Hoy Desglosada 8% / 5%</div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-full border p-1 flex items-center gap-2 mb-4 shadow-sm">
+      <input id="buscador-global" placeholder="Buscar por nombre, número o ID..." class="flex-1 px-4 py-2 text-[11px] outline-none rounded-full">
+      <button class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">🔍</button>
+      <button onclick="limpiarBuscador()" class="text-[10px] px-3 py-1">Limpiar</button>
+      <button onclick="exportExcelGlobal()" class="bg-green-600 text-white text-[10px] px-4 py-2 rounded-full font-bold">Exportar Excel</button>
+      <button onclick="exportPDFGlobal()" class="bg-red-600 text-white text-[10px] px-4 py-2 rounded-full font-bold">PDF</button>
+      <button onclick="exportCSVGlobal()" class="bg-[#0f2440] text-white text-[10px] px-4 py-2 rounded-full font-bold">CSV</button>
+    </div>
+
+    <div class="mb-2 text-[9px] font-bold tracking-widest">TRANSACCIONES RECIENTES - NUMERACIÓN CORRELATIVA ANTIGUA--RECIENTE - BOTONES SEPARADOS 8% • BOTONES SEPARADOS CADA COMBINACIÓN EN SU PROPIO CAMPO INDIVIDUAL - COLORES DISTINTOS</div>
+    <div class="grid grid-cols-6 gap-2 mb-4">
+      <button onclick="abrirVentanillaTablero('RD → HT Natcash (8%)', 'envio')" class="bg-[#1e3a5f] text-white rounded-lg p-3 text-left relative"><div class="text-[8px] opacity-70 absolute top-1 right-2 bg-white/20 px-2 py-0.5 rounded-full">BOTON SEPARADO</div><div class="text-[10px]">✈️</div><div class="text-[10px] font-bold mt-1">+ RD->HT NatCash (8%)</div></button>
+      <button onclick="abrirVentanillaTablero('RD → HT MonCash (8%)', 'envio')" class="bg-[#2a5aa8] text-white rounded-lg p-3 text-left relative"><div class="text-[8px] opacity-70 absolute top-1 right-2 bg-white/20 px-2 py-0.5 rounded-full">CAMPO INDIVIDUAL</div><div class="text-[10px]">💸</div><div class="text-[10px] font-bold mt-1">+ RD->HT MonCash (8%)</div></button>
+      <button onclick="abrirVentanillaTablero('HT → RD Natcash (8%)', 'retiro')" class="bg-orange-400 text-white rounded-lg p-3 text-left relative"><div class="text-[8px] absolute top-1 right-2 bg-white/30 px-2 py-0.5 rounded-full">COLORES DISTINTOS</div><div class="text-[10px]">🔄</div><div class="text-[10px] font-bold mt-1">+ HT->RD NatCash (8%)</div></button>
+      <button onclick="abrirVentanillaTablero('HT → RD MonCash (8%)', 'retiro')" class="bg-orange-300 text-white rounded-lg p-3 text-left relative"><div class="text-[8px] absolute top-1 right-2 bg-white/30 px-2 py-0.5 rounded-full">8% fee</div><div class="text-[10px]">💱</div><div class="text-[10px] font-bold mt-1">+ HT->RD MonCash (8%)</div></button>
+      <button onclick="abrirVentanillaTablero('HT → HT Natcash (25 HTG fee)', 'envio')" class="bg-yellow-400 text-black rounded-lg p-3 text-left relative"><div class="text-[8px] absolute top-1 right-2 bg-black/10 px-2 py-0.5 rounded-full">Tabla Natcash</div><div class="text-[10px]">🏦</div><div class="text-[10px] font-bold mt-1">+ HT->HT NatCash</div></button>
+      <button onclick="abrirVentanillaTablero('HT → HT MonCash (25 HTG fee)', 'envio')" class="bg-yellow-300 text-black rounded-lg p-3 text-left relative"><div class="text-[8px] absolute top-1 right-2 bg-black/10 px-2 py-0.5 rounded-full">Tabla MonCash</div><div class="text-[10px]">📱</div><div class="text-[10px] font-bold mt-1">+ HT->HT MonCash</div></button>
+      <button onclick="abrirVentanillaTablero('RD → RD (8%)', 'envio')" class="bg-[#2a5aa8] text-white rounded-lg p-3 text-left relative"><div class="text-[8px] absolute top-1 right-2 bg-white/20 px-2 py-0.5 rounded-full">RD Interno</div><div class="text-[10px]">DO</div><div class="text-[10px] font-bold mt-1">+ RD->RD (8%)</div></button>
+      <button onclick="abrirVentanillaTablero('RD → USA (8%)', 'envio')" class="bg-purple-500 text-white rounded-lg p-3 text-left relative"><div class="text-[8px] absolute top-1 right-2 bg-white/20 px-2 py-0.5 rounded-full">Internacional</div><div class="text-[10px]">US</div><div class="text-[10px] font-bold mt-1">+ RD->USA (8%)</div></button>
+      <button onclick="abrirVentanillaTablero('USA → RD (8%)', 'envio')" class="bg-green-500 text-white rounded-lg p-3 text-left relative"><div class="text-[8px] absolute top-1 right-2 bg-white/20 px-2 py-0.5 rounded-full">USA to RD</div><div class="text-[10px]">✈️</div><div class="text-[10px] font-bold mt-1">+ USA->RD (8%)</div></button>
+      <button onclick="abrirVentanillaTablero('USA → HT (8%)', 'envio')" class="bg-pink-400 text-white rounded-lg p-3 text-left relative"><div class="text-[8px] absolute top-1 right-2 bg-white/20 px-2 py-0.5 rounded-full">USA to HT</div><div class="text-[10px]">🌎</div><div class="text-[10px] font-bold mt-1">+ USA->HT (8%)</div></button>
+      <button onclick="abrirVentanillaTablero('HT → USA (8%)', 'envio')" class="bg-cyan-400 text-white rounded-lg p-3 text-left relative"><div class="text-[8px] absolute top-1 right-2 bg-white/20 px-2 py-0.5 rounded-full">HT to USA</div><div class="text-[10px]">💸</div><div class="text-[10px] font-bold mt-1">+ HT->USA (8%)</div></button>
+      <button onclick="abrirVentanillaTablero('Deposito (3 cuentas)', 'deposito')" class="bg-green-600 text-white rounded-lg p-3 text-left relative"><div class="text-[8px] absolute top-1 right-2 bg-white/20 px-2 py-0.5 rounded-full">3 cuentas</div><div class="text-[10px]">➕</div><div class="text-[10px] font-bold mt-1">+ Deposito</div></button>
+    </div>
+
+    <div id="view-tablero" class="view bg-white rounded-xl border shadow-sm">
+      <div class="p-3 border-b flex justify-between items-center">
+        <span class="font-bold text-[10px] tracking-widest">TRANSACCIONES RECIENTES • N° CORRELATIVO • EJEMPLO 01 SW-2024-10-12-180939 Deposito (3 cuentas) NatCash - Deposito 5000 RD$ Fee 8%: 0 Neto:5000 Aprobado</span>
+        <span class="bg-gray-100 px-3 py-1 rounded-full text-[10px]"><span id="total-registros">6</span> registros</span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-[10px]">
+          <thead><tr class="bg-gray-50 text-[9px] tracking-widest"><th class="p-3 text-left">N°</th><th class="p-3 text-left">ID / FECHA</th><th class="p-3 text-left">RUTA EXACTA SEPARADA</th><th class="p-3 text-left">MONTO / FEE 8%</th><th class="p-3 text-left">ESTADO</th><th class="p-3 text-left">ACCIONES Ver Modificar Borrar</th></tr></thead>
+          <tbody id="tabla-principal-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="view-envios" class="view hidden bg-white rounded-xl border shadow-sm p-0"></div>
+    <div id="view-retiros" class="view hidden bg-white rounded-xl border shadow-sm p-0"></div>
+    <div id="view-recargas" class="view hidden bg-white rounded-xl border-2 border-yellow-400 shadow-sm p-0"></div>
+    <div id="view-paquetikos" class="view hidden bg-white rounded-xl border-2 border-yellow-400 shadow-sm p-0"></div>
+    <div id="view-recepcion" class="view hidden bg-white rounded-xl border-2 border-green-400 shadow-sm p-0"></div>
+    <div id="view-beneficiarios" class="view hidden bg-white rounded-xl border shadow-sm"></div>
+    <div id="view-remitentes" class="view hidden bg-white rounded-xl border shadow-sm"></div>
+    <div id="view-agentes" class="view hidden bg-white rounded-xl border shadow-sm"></div>
+    <div id="view-facturas" class="view hidden bg-white rounded-xl border shadow-sm"></div>
