@@ -1,0 +1,43 @@
+name: Publicar SENDWAYO EXPRESS V7 en GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar el repositorio
+        uses: actions/checkout@v4
+      - name: Reconstruir el HTML completo
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p public
+          cat chunks/part*.txt > public/index.html
+          bytes="$(wc -c < public/index.html | tr -d ' ')"
+          echo "HTML reconstruido: ${bytes} bytes"
+          test "$bytes" -eq 22881979
+          grep -q '</html>' public/index.html
+      - name: Configurar GitHub Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+      - name: Preparar sitio
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+      - name: Publicar sitio
+        id: deployment
+        uses: actions/deploy-pages@v4
