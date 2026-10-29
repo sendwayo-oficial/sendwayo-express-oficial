@@ -1,0 +1,100 @@
+    else if(view==='facturas') filtrados=sorted.filter(t=>t.tipo==='Facturas');
+    else if(view==='comisiones') filtrados=sorted.filter(t=>t.tipo==='Comisiones');
+    else if(view==='creditos') filtrados=sorted.filter(t=>t.tipo==='Creditos');
+
+    let func=''; if(view==='envios') func="document.getElementById('modal-envio-v162').classList.remove('hidden')";
+    else if(view==='retiros') func="document.getElementById('modal-retiro-v162').classList.remove('hidden')";
+    else if(view==='depositos'||view==='cuentas') func="abrirModalSeparado('depositos')";
+    else if(view==='recepcion') func="document.getElementById('modal-paquetes-v162').classList.remove('hidden')";
+    else if(view==='recargas') func="document.getElementById('modal-recargas-v162').classList.remove('hidden')";
+    else if(view==='paquetikos') func="document.getElementById('modal-paquetikos-v162').classList.remove('hidden')";
+    else if(view==='facturas') func="document.getElementById('modal-facturas-v162').classList.remove('hidden')";
+    else if(view==='comisiones') func="document.getElementById('modal-comisiones-v162').classList.remove('hidden')";
+    else if(view==='creditos') func="document.getElementById('modal-creditos-v162').classList.remove('hidden')";
+
+    cont.innerHTML=`<div class="bg-white rounded-2xl border p-4 mb-3 shadow"><div class="flex gap-2 mb-2"><span class="bg-[#0f2d5a] text-yellow-300 text-[11px] px-4 py-1.5 rounded-full">Tasa RD→HT: 2.10</span><span class="bg-[#0f3d2e] text-yellow-300 text-[11px] px-4 py-1.5 rounded-full">Tasa HT→RD: 2.30</span></div><div class="grid grid-cols-3 gap-2 text-[11px] border-t pt-2"><div>Balance Gourdes ${window.v162_bal.htg} HTG - HT→HT gourdes</div><div>Balance Pesos RD$ ${window.v162_bal.rd} - demás pesos</div><div>Comision HTG ${window.v162_bal.comHTG} / RD$ ${window.v162_bal.comRD}</div></div></div>
+    <div class="bg-white rounded-2xl border p-4 flex flex-wrap justify-between items-center gap-3 shadow"><h2 class="font-bold text-[13px]">${titulo} - SOLO ${titulo} - Agregar nuevo + Excel PDF CSV redondo esquina como estaba</h2><div class="flex items-center gap-2"><input placeholder="Buscar... search by phone" class="border rounded-full px-4 py-2 text-[11px] w-[200px]" onkeyup="v162_filtrarTabla('${view}', this.value)"><button onclick="${func}" class="bg-[#0f2440] text-white text-[11px] font-bold px-5 py-2.5 rounded-full shadow">+ Agregar nuevo ${view==='envios'?'envío':view==='retiros'?'retiro - Ventanilla Natcash MonCash':view}</button><button class="bg-green-600 text-white text-[10px] px-3 py-2 rounded-full">Excel</button><button class="bg-red-600 text-white text-[10px] px-3 py-2 rounded-full">PDF</button><button class="bg-blue-600 text-white text-[10px] px-3 py-2 rounded-full">CSV</button></div></div>
+    <div class="bg-white rounded-2xl border mt-3 overflow-x-auto shadow"><table class="w-full text-[10px]"><thead class="bg-gray-50"><tr><th class="p-3 rounded-l-full">N°</th><th class="p-2">ID / FECHA Y HORA</th><th class="p-2">RUTA EXACTA - Ventanilla retiro Haití a Haití</th><th class="p-2">MONTO / FEE</th><th class="p-2">BENEFICIARIO</th><th class="p-2">ESTADO</th><th class="p-3 rounded-r-full">ACCIONES</th></tr></thead><tbody id="tabla-${view}-body"></tbody></table></div>`;
+
+    const tbody=document.getElementById(`tabla-${view}-body`); tbody.innerHTML='';
+    if(filtrados.length===0){
+      tbody.innerHTML=`<tr><td colspan="7" class="p-8 text-center text-gray-500 text-[11px]">No hay ${titulo} - Tiene: agregar nuevo ${titulo} + buscador + Excel + PDF + CSV redondo esquina + numeración 01 02 03 + fecha y hora + antiguo→reciente + solo ${titulo} sin mezclar + ${view==='retiros'?'Retiros REAL - Ventanilla retiro Haití a Haití Natcash Naca a Naca y MonCash Montcash a Montcash - Ahora sí se ve - Con agregar nuevo retiro rápido - Campos de retiro puestos - No solo envío':view==='recargas'?'Recargas con sugerencia números 4170 2368, 35249812, 3193 1720, 829 215 5657 - Días libres - Esquina redondo como estaba - Agregar nuevo Excel PDF CSV':'Paquetikos con sugerencia números 509 4170 2368, 509 3524 9812 - 3 Compañías Claro Viva Altice - Planes Un día libre 65, Tres días 120, 5 días libres 160, 7 días libres 200 - Esquina redondo como estaba'}</td></tr>`; return;
+    }
+    filtrados.forEach((t,idx)=>{ 
+      const tr=document.createElement('tr'); tr.className='border-b hover:bg-blue-50';
+      const id=String(t.id).replace(/'/g,"\\'");
+      let acciones='';
+      if(t.estado==='Aprobado'){
+        acciones=`<button onclick="ver('${id}')" class="bg-[#1e3a5f] text-white px-2 py-1 rounded-full text-[8px]">Ver</button> <button onclick="modificar('${id}')" class="bg-white border px-2 py-1 rounded-full text-[8px]">Modificar</button> <button onclick="borrar('${id}')" class="bg-white border px-2 py-1 rounded-full text-[8px]">Borrar</button> <button onclick="verComprobante('${id}')" class="bg-orange-500 text-white px-2 py-1 rounded-full text-[8px]">Comprobante</button>`;
+      } else {
+        acciones=`<button onclick="ver('${id}')" class="bg-[#1e3a5f] text-white px-2 py-1 rounded-full text-[8px]">Ver</button> <button onclick="modificar('${id}')" class="bg-white border px-2 py-1 rounded-full text-[8px]">Modificar</button> <button onclick="borrar('${id}')" class="bg-white border px-2 py-1 rounded-full text-[8px]">Borrar</button> <button onclick="aprobar('${id}')" class="bg-green-600 text-white px-2 py-1 rounded-full text-[8px]">Aprobado</button> <button onclick="rechazar('${id}')" class="bg-red-600 text-white px-2 py-1 rounded-full text-[8px]">Rechazado</button> <button onclick="noCoincide('${id}')" class="bg-purple-600 text-white px-2 py-1 rounded-full text-[8px]">No coincide</button>`;
+      }
+      tr.innerHTML=`<td class="p-3 font-bold">${String(idx+1).padStart(2,'0')}</td><td class="p-2"><div class="font-bold">${t.id||''}</div><div class="text-[8px]">${t.fecha||''}</div></td><td class="p-2">${t.ruta||''}<div class="text-[8px]">${t.rutaExacta||''}</div></td><td class="p-2">${t.monto??''}<div class="text-[8px]">${t.feeText||''}</div></td><td class="p-2">${t.beneficiario||''}</td><td class="p-2"><span class="inline-block rounded-full px-2 py-1 ${t.estado==='Aprobado'?'bg-green-100 text-green-700':t.estado==='Pendiente'?'bg-amber-100 text-amber-700':'bg-red-100 text-red-700'}">${t.estado||'Pendiente'}</span></td><td class="p-2"><div class="flex flex-wrap gap-1 min-w-[230px]">${acciones}</div></td>`; tbody.appendChild(tr); 
+    });
+  };
+
+  window.v162_filtrarTabla=function(view, txt){ const tb=document.getElementById(`tabla-${view}-body`); if(!tb) return; tb.querySelectorAll('tr').forEach(tr=>{ tr.style.display=tr.textContent.toLowerCase().includes(txt.toLowerCase())?'':'none'; }); };
+  window.abrirModalSeparado=function(view){ if(view==='envios') document.getElementById('modal-envio-v162').classList.remove('hidden'); else if(view==='retiros') document.getElementById('modal-retiro-v162').classList.remove('hidden'); else if(view==='depositos'||view==='cuentas'){ const q=document.getElementById('v162-dep-quien'); if(q) q.value=(currentUser.nombre||'')+' - '+(currentUser.codigo||currentUser.id||'')+' ('+currentUser.role+')'; document.getElementById('modal-deposito-v162').classList.remove('hidden'); } else if(view==='recepcion') document.getElementById('modal-paquetes-v162').classList.remove('hidden'); else if(view==='recargas') document.getElementById('modal-recargas-v162').classList.remove('hidden'); else if(view==='paquetikos') document.getElementById('modal-paquetikos-v162').classList.remove('hidden'); else if(view==='facturas') document.getElementById('modal-facturas-v162').classList.remove('hidden'); else if(view==='comisiones') document.getElementById('modal-comisiones-v162').classList.remove('hidden'); else if(view==='creditos') document.getElementById('modal-creditos-v162').classList.remove('hidden'); };
+  window.abrirVentanillaTablero=function(ruta, tipo){ if(tipo==='envio'){ document.getElementById('v162-envio-ruta').value=ruta; v162_onEnvioRuta(); document.getElementById('modal-envio-v162').classList.remove('hidden'); } else if(tipo==='retiro'){ document.getElementById('v162-retiro-ruta').value=ruta; v162_onRetiroRuta(); document.getElementById('modal-retiro-v162').classList.remove('hidden'); } };
+
+  setTimeout(()=>{ initCarousel(); document.getElementById('welcome-landing').classList.remove('hidden'); document.getElementById('login-screen').classList.add('hidden'); document.querySelectorAll('button').forEach(b=>{ b.disabled=false; b.style.pointerEvents='auto'; b.style.opacity='1'; }); document.addEventListener('click', e=>{ if(!e.target.closest('input') && !e.target.closest('[id^=v162-sug]') && !e.target.closest('[id^=v162-sug-num]')){ document.querySelectorAll('[id^=v162-sug]').forEach(el=>el.classList.add('hidden')); document.querySelectorAll('[id^=v162-sug-num]').forEach(el=>el.classList.add('hidden')); } }); },600);
+  setInterval(()=>{ document.querySelectorAll('button').forEach(b=>{ b.disabled=false; b.style.pointerEvents='auto'; b.style.opacity='1'; }); },2000);
+})();
+</script>
+
+
+<script>
+// PARCHE MINIMO V170 - SOLO TARIFA HT->HT POR RANGO + HABILITAR TABLERO Y DEPOSITO - NO TOCAR NADA MAS
+(function(){
+  // 1. Habilitar tablero principal y deposito - todos los campos habilitados
+  function habilitarTodo(){
+    document.querySelectorAll('#view-tablero button, #view-tablero input, #view-tablero select, #view-tablero a').forEach(el=>{
+      el.disabled=false;
+      el.removeAttribute('disabled');
+      el.style.pointerEvents='auto';
+      el.style.opacity='1';
+    });
+    document.querySelectorAll('button[onclick*="deposito"], button[onclick*="deposito"], #modal-deposito-v162 input, #modal-deposito-v162 select, #modal-deposito-v162 button').forEach(el=>{
+      el.disabled=false;
+      el.removeAttribute('disabled');
+      el.style.pointerEvents='auto';
+      el.style.opacity='1';
+    });
+    // Habilitar todos los botones agregar nuevo
+    document.querySelectorAll('button').forEach(b=>{
+      if(b.textContent.toLowerCase().includes('agregar nuevo') || b.textContent.includes('Excel') || b.textContent.includes('PDF') || b.textContent.includes('CSV')){
+        b.disabled=false;
+        b.removeAttribute('disabled');
+        b.style.pointerEvents='auto';
+        b.style.opacity='1';
+      }
+    });
+  }
+  setTimeout(habilitarTodo, 500);
+  setTimeout(habilitarTodo, 2000);
+  setTimeout(habilitarTodo, 4000);
+  document.addEventListener('click', function(){ setTimeout(habilitarTodo, 100); });
+
+  // Corrección: las rutas Haití→Haití usan importes y tarifas en HTG.
+  window.v162_calcRetiro_CORREGIDO = function(){
+    const montoEl = document.getElementById('v162-retiro-monto');
+    const rutaEl = document.getElementById('v162-retiro-ruta');
+    const labelEl = document.getElementById('v162-retiro-monto-label');
+    if(!montoEl || !rutaEl) return;
+    const monto = Math.max(0, Number(montoEl.value) || 0);
+    const ruta = String(rutaEl.value || '');
+    const isHTHT = /HT\s*→\s*HT|HT\s*->\s*HT|Naca a Naca|Montcash a Montcash/i.test(ruta);
+    const netoEl = document.getElementById('v162-retiro-neto');
+    const comEl = document.getElementById('v162-retiro-com');
+    const recEl = document.getElementById('v162-retiro-rec');
+    const tasaEl = document.getElementById('v162-retiro-tasa');
+
+    if(labelEl) labelEl.textContent = isHTHT ? 'MONTO EN (HTG$)' : 'MONTO EN (RD$)';
+    if(monto <= 0){
+      if(netoEl) netoEl.textContent = '0.00' + (isHTHT ? ' HTG' : ' RD$');
+      if(comEl) comEl.textContent = '0.00' + (isHTHT ? ' HTG' : ' RD$');
+      if(recEl) recEl.textContent = '0.00' + (isHTHT ? ' HTG' : ' RD$');
+      if(tasaEl) tasaEl.textContent = isHTHT ? 'Tarifa Haití a Haití · Gourdes HTG' : 'Tarifa aplicable a la ruta seleccionada';
+      return;
+    }
+

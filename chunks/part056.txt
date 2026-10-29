@@ -1,0 +1,100 @@
+            </select>
+            <div class="text-[10px] text-gray-500 mt-1">Muestra nombre y código del remitente - Si es remitente también aparece</div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="block text-[11px] font-bold">MONEDA</label>
+              <select id="aj171-moneda" class="w-full border rounded-xl p-3 text-[12px]">
+                <option value="GOURDES">Gourdes Haitianos - HTG</option>
+                <option value="PESOS">Pesos Dominicanos - RD$</option>
+              </select>
+              <div class="text-[9px] text-gray-500">Si es Gourdes va a balance Gourdes / Comisión HTG - Si es Pesos va a balance Pesos / Comisión RD$</div>
+            </div>
+            <div><label class="block text-[11px] font-bold">TIPO AJUSTE</label>
+              <select id="aj171-tipo" class="w-full border rounded-xl p-3 text-[12px]">
+                <option value="BALANCE">Ajustar / Acreditar Balance</option>
+                <option value="COMISION">Ajustar / Acreditar Comisión</option>
+              </select>
+            </div>
+          </div>
+          <div><label class="block text-[11px] font-bold">CANTIDAD DE DINERO</label>
+            <input id="aj171-cantidad" type="number" placeholder="Ej: 5000" class="w-full border rounded-xl p-3 font-bold text-[14px]">
+          </div>
+          <div><label class="block text-[11px] font-bold">CONCEPTO</label>
+            <input id="aj171-concepto" placeholder="Ej: Ajuste por error, Acreditar comisión, Depósito admin..." class="w-full border rounded-xl p-3 text-[12px]">
+          </div>
+          <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-2 text-[10px]">
+            <b>Admin y formación secreta solamente</b> pueden ajustar. Si selecciona Gourdes va a balanza Gourdes o comisión HTG. Si Pesos va a balance Pesos o comisión RD$.
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <button onclick="document.getElementById('modal-ajuste-comision-v171').classList.add('hidden')" class="bg-[#dc2626] text-white font-bold py-3 rounded-xl text-[12px]">CANCELAR</button>
+            <button onclick="guardarAjuste171()" class="bg-[#0f2440] text-white font-bold py-3 rounded-xl text-[11px]">GUARDAR - Ajuste llega a cuenta</button>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    // Llenar remitentes
+    const sel=modal.querySelector('#aj171-cuenta');
+    if(window.REMITENTES){
+      window.REMITENTES.forEach(r=>{
+        const o=document.createElement('option');
+        o.value=r.codigo||r.id;
+        o.textContent=(r.codigo||r.id)+' - '+(r.nombre||r.name)+' - '+(r.telefono||'') ;
+        sel.appendChild(o);
+      });
+    }
+    if(window.AGENTES){
+      window.AGENTES.forEach(a=>{
+        if(a.id==='admin-000') return;
+        const o=document.createElement('option');
+        o.value=a.codigo||a.id;
+        o.textContent=(a.codigo||a.id)+' - '+(a.nombre||a.name)+' (Agente)';
+        sel.appendChild(o);
+      });
+    }
+    return modal;
+  }
+
+  window.guardarAjuste171 = function(){
+    const cuenta=document.getElementById('aj171-cuenta').value;
+    const moneda=document.getElementById('aj171-moneda').value;
+    const tipo=document.getElementById('aj171-tipo').value;
+    const cantidad=parseFloat(document.getElementById('aj171-cantidad').value)||0;
+    const concepto=document.getElementById('aj171-concepto').value||'Ajuste';
+    if(!cantidad){ alert('Pon cantidad de dinero'); return; }
+    if(!cuenta){ alert('Selecciona remitente o admin'); return; }
+    // Aplicar a balance
+    let target = (window.REMITENTES||[]).find(r=>r.codigo===cuenta||r.id===cuenta);
+    if(!target) target = (window.AGENTES||[]).find(a=>a.codigo===cuenta||a.id===cuenta);
+    if(target){
+      if(!target.balances) target.balances={DOP:0,HTG:0};
+      if(!target.comisiones) target.comisiones={DOP:0,HTG:0};
+      if(tipo==='BALANCE'){
+        if(moneda==='PESOS') target.balances.DOP+=cantidad;
+        else target.balances.HTG+=cantidad;
+      } else {
+        if(moneda==='PESOS') target.comisiones.DOP+=cantidad;
+        else target.comisiones.HTG+=cantidad;
+      }
+    }
+    // Mensaje
+    alert('✅ '+tipo+' - '+cantidad+' '+(moneda==='PESOS'?'RD$ Pesos Dominicanos':'HTG Gourdes Haitianos')+' a '+cuenta+' - Concepto: '+concepto+' - Llega a cuenta - '+(moneda==='PESOS'?'Va a balance Pesos / Comisión RD$':'Va a balanza Gourdes / Comisión HTG'));
+    document.getElementById('modal-ajuste-comision-v171').classList.add('hidden');
+    // Notificacion
+    if(window.addNotificacion) addNotificacion(tipo+' '+cantidad+' '+moneda+' a '+cuenta+' - '+concepto, 'Ajuste');
+    // Actualizar tablero si existe
+    if(window.renderPrincipal) renderPrincipal();
+    if(window.actualizarTablero) actualizarTablero();
+  };
+
+  // Sobrescribir botones de ajustar balance/comision para abrir este modal solo admin
+  function hookAjusteButtons(){
+    document.querySelectorAll('button').forEach(b=>{
+      const txt=b.textContent.toLowerCase();
+      if(txt.includes('ajustar') || txt.includes('acreditar') || txt.includes('ajuste')){
+        if(txt.includes('balance') || txt.includes('comisión') || txt.includes('comision')){
+          b.onclick = function(e){
+            e.preventDefault();
+            // Solo admin y formacion secreta
+            const current = window.currentUser?.id||'ADMINADMIN';
+            // Permitir si admin-000 o admin

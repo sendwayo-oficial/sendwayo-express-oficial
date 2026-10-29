@@ -1,0 +1,100 @@
+   if(!target)return;
+   document.querySelectorAll('.view').forEach(el=>{const active=el===target;el.classList.toggle('hidden',!active);el.style.display=active?'block':'';if(active){el.style.width='100%';el.style.maxWidth='100%';el.style.minWidth='0';}});
+   if(key==='tablero'){buildDashboard();refreshDashboardAmounts();}
+   buildIdentityStrip();
+   document.body.dataset.sendwayoActiveView=key;
+   if(window.innerWidth<=1024){$('sendwayo-main-sidebar')?.classList.remove('sendwayo-menu-open');$('sendwayo-menu-shade')?.classList.remove('open');}
+ }
+ // Make every navigation choice show exactly one view, on phone, tablet and desktop.
+ const priorShow=window.showView;
+ if(typeof priorShow==='function')window.showView=function(view){
+   const ret=priorShow.apply(this,arguments);
+   setTimeout(()=>selectedView(view),0);
+   return ret;
+ };
+ document.addEventListener('click',e=>{const b=e.target.closest('button[onclick*="showView("]');if(!b)return;const m=(b.getAttribute('onclick')||'').match(/showView\(['"]([^'"]+)['"]\)/);if(m)setTimeout(()=>selectedView(m[1]),20);},true);
+ // Welcome is the first public screen; only reveal the workspace after successful authentication.
+ function applyAuthState(){
+   const u=getUser();const logged=!!(u&&(u.id||u.uid||u.codigo||u.email));
+   if(logged){document.body.classList.add('sendwayo-authenticated');$('welcome-landing')?.classList.add('hidden');$('login-screen')?.classList.add('hidden');buildIdentityStrip();}
+   else{document.body.classList.remove('sendwayo-authenticated');const welcome=$('welcome-landing');if(welcome)welcome.classList.remove('hidden');document.querySelectorAll('.view').forEach(v=>v.classList.add('hidden'));}
+ }
+ const oldLogin=window.intentarLogin;
+ if(typeof oldLogin==='function')window.intentarLogin=function(){const ret=oldLogin.apply(this,arguments);setTimeout(()=>{applyAuthState();if(getUser())selectedView('tablero');},80);return ret;};
+ // Cover alternate login buttons too, and never expose the dashboard behind the login overlay.
+ const oldShowLogin=window.v162_showLogin;
+ if(typeof oldShowLogin==='function')window.v162_showLogin=function(){document.body.classList.remove('sendwayo-authenticated');const ret=oldShowLogin.apply(this,arguments);$('login-screen')?.classList.remove('hidden');return ret;};
+ // Session duration is display-only; the existing 40-minute inactivity lock remains in force.
+ const start=Date.now();function tick(){
+   const now=new Date();const d=$('sendwayo-v7-date'),c=$('sendwayo-v7-clock'),t=$('sendwayo-v7-duration');
+   if(d)d.textContent=now.toLocaleDateString('es-DO');if(c)c.textContent=now.toLocaleTimeString('es-DO');
+   if(t){const sec=Math.floor((Date.now()-start)/1000);t.textContent='Tiempo: '+String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0');}
+   refreshDashboardAmounts();
+ }
+ function init(){
+   // Avoid any private screen flash while the public landing is visible.
+   const u=getUser();if(!u){document.body.classList.remove('sendwayo-authenticated');document.querySelectorAll('.view').forEach(v=>v.classList.add('hidden'));$('welcome-landing')?.classList.remove('hidden');}
+   else{applyAuthState();selectedView('tablero');}
+   buildDashboard();buildIdentityStrip();tick();setInterval(tick,1000);
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+})();</script>
+<script id="sendwayo-mobile-menu-controller">
+(function(){
+  'use strict';
+  function install(){
+    const sidebar=[...document.querySelectorAll('body > div,body main,body section')].find(el=>el.querySelector('button[onclick*="showView(\'retiros\')"]')&&String(el.className||'').includes('220px'))||document.querySelector('.w-\\[220px\\]');
+    if(!sidebar)return;
+    sidebar.id='sendwayo-main-sidebar';
+    if(document.getElementById('sendwayo-mobile-menu'))return;
+    const style=document.createElement('style');style.textContent='@media(max-width:1024px){#sendwayo-main-sidebar{position:fixed!important;left:0;top:0;bottom:0;width:250px!important;max-width:85vw;overflow-y:auto;z-index:10001;transform:translateX(-110%);transition:transform .2s ease;box-shadow:0 8px 30px #0005}#sendwayo-main-sidebar.sendwayo-menu-open{transform:translateX(0)}#sendwayo-menu-shade{display:none;position:fixed;inset:0;background:#0008;z-index:10000}#sendwayo-menu-shade.open{display:block}#sendwayo-mobile-menu{position:fixed;left:12px;top:12px;z-index:10002;width:44px;height:44px;border-radius:12px;background:#0f2440;color:white;font-size:25px;font-weight:bold;box-shadow:0 2px 8px #0003}}@media(min-width:1025px){#sendwayo-mobile-menu,#sendwayo-menu-shade{display:none!important}}';document.head.appendChild(style);
+    const shade=document.createElement('div');shade.id='sendwayo-menu-shade';document.body.appendChild(shade);
+    const btn=document.createElement('button');btn.id='sendwayo-mobile-menu';btn.type='button';btn.setAttribute('aria-label','Abrir menú');btn.textContent='☰';document.body.appendChild(btn);
+    const close=()=>{sidebar.classList.remove('sendwayo-menu-open');shade.classList.remove('open');};
+    btn.addEventListener('click',()=>{if(document.body.classList.contains('sendwayo-authenticated')){sidebar.classList.toggle('sendwayo-menu-open');shade.classList.toggle('open',sidebar.classList.contains('sendwayo-menu-open'));}});
+    shade.addEventListener('click',close);
+    sidebar.querySelectorAll('button[onclick*="showView"]').forEach(b=>b.addEventListener('click',()=>{if(innerWidth<=1024)close();}));
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
+  window.addEventListener('load',install);window.addEventListener('resize',install);
+})();
+</script>
+
+
+<script>
+/* CORRECCION FINAL AISLADA: PAGINA REAL DE RETIROS */
+(function(){
+  const renderAnterior = window.renderModuloSeparado;
+  const showAnterior = window.showView;
+  const normaliza = v => String(v == null ? '' : v);
+  const html = v => normaliza(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  const js = v => normaliza(v).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\r/g,' ').replace(/\n/g,' ');
+  function transacciones(){
+    if(Array.isArray(window.TRANSACCIONES)) return window.TRANSACCIONES;
+    try { if(typeof TRANSACCIONES !== 'undefined' && Array.isArray(TRANSACCIONES)) return TRANSACCIONES; } catch(e){}
+    return [];
+  }
+  function guardarTransacciones(){
+    try { localStorage.setItem('sendwayo_express_oficial_20261029_transacciones', JSON.stringify(transacciones())); } catch(e){}
+  }
+  function asegurarVista(){
+    let cont=document.getElementById('view-retiros');
+    if(!cont){
+      cont=document.createElement('div');
+      cont.id='view-retiros';
+      cont.className='view hidden bg-white rounded-xl border shadow-sm p-0';
+      const envios=document.getElementById('view-envios');
+      const principal=envios && envios.parentElement ? envios.parentElement : (document.getElementById('view-tablero')?.parentElement || document.body);
+      const recargas=document.getElementById('view-recargas');
+      if(recargas && recargas.parentElement===principal) principal.insertBefore(cont,recargas);
+      else if(envios && envios.parentElement===principal) envios.insertAdjacentElement('afterend',cont);
+      else principal.appendChild(cont);
+    }
+    return cont;
+  }
+  window.sendwayoAbrirVentanillaRetiro=function(ruta){
+    const modal=document.getElementById('modal-retiro-v162') || document.getElementById('modal-retiro-compacto');
+    if(!modal){ alert('No se encontró la ventanilla de retiro.'); return; }
+    modal.classList.remove('hidden');
+    if(ruta && typeof window.v162_setRetiro==='function') window.v162_setRetiro(ruta);
+    else {

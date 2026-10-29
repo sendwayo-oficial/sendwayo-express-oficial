@@ -1,0 +1,100 @@
+  function exportar(view, formato){
+    const tabla=tablaActual(view);
+    if(!tabla){ alert('No hay tabla para exportar.'); return; }
+    const nombre='Sendwayo-'+view+'-'+new Date().toISOString().slice(0,10);
+    if(formato==='pdf'){
+      const w=window.open('','_blank');
+      if(!w){ alert('Permite las ventanas emergentes para guardar el PDF.'); return; }
+      const html='<!doctype html><html><head><meta charset="utf-8"><title>'+nombre+'</title><style>body{font-family:Arial,sans-serif;padding:18px}h2{font-size:18px}table{border-collapse:collapse;width:100%;font-size:10px}th,td{border:1px solid #999;padding:5px;text-align:left}button{display:none}@media print{body{padding:0}}</style></head><body><h2>'+nombre+'</h2>'+tabla.outerHTML+'<script>window.onload=function(){window.print()}<\\/script></body></html>';
+      w.document.open(); w.document.write(html); w.document.close(); return;
+    }
+    const rows=[...tabla.querySelectorAll('tr')].map(tr=>[...tr.querySelectorAll('th,td')].map(td=>'"'+td.innerText.replace(/\\s+/g,' ').trim().replace(/"/g,'""')+'"'));
+    const csv='\\ufeff'+rows.map(r=>r.join(',')).join('\\r\\n');
+    const blob=new Blob([csv],{type:formato==='excel'?'application/vnd.ms-excel;charset=utf-8':'text/csv;charset=utf-8'});
+    const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=nombre+(formato==='excel'?'.xls':'.csv'); document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),1000);
+  }
+  window.v162_exportarModulo=exportar;
+  const renderOriginal=window.renderModuloSeparado;
+  if(typeof renderOriginal==='function'){
+    window.renderModuloSeparado=function(view){
+      const result=renderOriginal.apply(this,arguments);
+      if(['retiros','envios','depositos'].includes(view)){
+        const cont=document.getElementById('view-'+view);
+        if(cont)cont.querySelectorAll('button').forEach(btn=>{
+          const t=(btn.textContent||'').trim().toLowerCase();
+          if(t==='excel')btn.onclick=()=>exportar(view,'excel'); else if(t==='pdf')btn.onclick=()=>exportar(view,'pdf'); else if(t==='csv')btn.onclick=()=>exportar(view,'csv');
+        });
+      }
+      return result;
+    };
+  }
+})();
+</script>
+
+
+<script id="sendwayo-final-mobile-navigation">
+(function(){
+  function closeMobileMenu(){
+    var side=document.getElementById('sendwayo-main-sidebar');
+    var shade=document.getElementById('sendwayo-menu-shade');
+    if(window.innerWidth<=1024){ if(side)side.classList.remove('sendwayo-menu-open'); if(shade)shade.classList.remove('open'); }
+  }
+  // Keep the existing renderer (and its module-specific behavior), then show only the selected page.
+  var previous=window.showView;
+  if(typeof previous==='function' && !window.__sendwayoFinalMobileNavigation){
+    window.__sendwayoFinalMobileNavigation=true;
+    window.showView=function(route){
+      var result=previous.apply(this,arguments);
+      window.setTimeout(function(){
+        document.querySelectorAll('.view').forEach(function(el){el.classList.add('hidden');});
+        var active=document.getElementById('view-'+route);
+        var dashboard=document.getElementById('view-tablero');
+        if(route==='tablero') { if(dashboard)dashboard.classList.remove('hidden'); }
+        else if(active) active.classList.remove('hidden');
+        closeMobileMenu();
+      },40);
+      return result;
+    };
+  }
+  function styleSidebar(){
+    var side=document.getElementById('sendwayo-main-sidebar'); if(!side)return;
+    side.style.setProperty('background-color','#0f2440','important');
+    side.style.setProperty('color','#fff','important');
+    side.querySelectorAll('button[onclick*="showView"]').forEach(function(b){
+      b.style.setProperty('color','#fff','important');
+      b.style.setProperty('font-size','16px','important');
+      b.style.setProperty('white-space','normal','important');
+      b.style.setProperty('height','auto','important');
+      b.style.setProperty('min-height','50px','important');
+      b.style.setProperty('line-height','1.35','important');
+      b.style.setProperty('overflow','visible','important');
+      b.querySelectorAll('span').forEach(function(sp){sp.style.setProperty('color','#fff','important');sp.style.setProperty('display','inline-block','important');sp.style.setProperty('flex-shrink','0','important');});
+    });
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',styleSidebar);else styleSidebar();
+  window.addEventListener('resize',styleSidebar);
+  document.addEventListener('click',function(){window.setTimeout(styleSidebar,50);});
+})();
+</script>
+
+
+<!-- Correcciones solicitadas: vista móvil por módulo, formularios grandes y sesión inactiva de 40 minutos -->
+<style id="sendwayo-mobile-focus-v5">
+@media(max-width:767px){
+ html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!important;font-size:16px!important}
+ body{padding-bottom:env(safe-area-inset-bottom)}
+ #app,main,#main-content,.main-content,.content-area{width:100%!important;max-width:100%!important;min-width:0!important;margin:0!important}
+ #view-tablero,#view-envios,#view-depositos,#view-retiros,#view-paquetikos,#view-recargas,#view-beneficiarios,#view-agentes,#view-remitentes,#view-cuentas,#view-secretas,#view-tarifas,#view-comisiones,#view-transferencia,#view-bono,#view-creditos,#view-ajustes,#view-referencia,#view-conciliacion,#view-reportes,#view-informes,#view-mibanco,#view-perfil{width:100%!important;max-width:100%!important;min-width:0!important;margin:0!important;border-radius:0!important;box-shadow:none!important}
+ .view:not(.hidden){display:block!important;min-height:calc(100dvh - 8px)!important;padding:0!important}
+ .view:not(.hidden)>section,.view:not(.hidden)>div,.view:not(.hidden) .module-content{width:100%!important;max-width:100%!important;min-width:0!important;margin-left:auto!important;margin-right:auto!important}
+ .view:not(.hidden) h1,.view:not(.hidden) h2,.view:not(.hidden) h3{font-size:clamp(20px,5.5vw,27px)!important;line-height:1.2!important}
+ .view:not(.hidden) button,.view:not(.hidden) input,.view:not(.hidden) select,.view:not(.hidden) textarea{font-size:16px!important;min-height:44px!important}
+ .view:not(.hidden) input,.view:not(.hidden) select,.view:not(.hidden) textarea{width:100%;max-width:100%;box-sizing:border-box;padding:11px 12px!important}
+ .view:not(.hidden) table{font-size:14px!important}
+ .view:not(.hidden) table th,.view:not(.hidden) table td{padding:10px 8px!important;white-space:normal!important}
+ .view:not(.hidden) .overflow-x-auto{max-width:100%!important;overflow-x:auto!important;-webkit-overflow-scrolling:touch}
+ .view:not(.hidden) header>div,.view:not(.hidden) .toolbar,.view:not(.hidden) .flex.flex-wrap.items-center{display:flex!important;flex-wrap:wrap!important;justify-content:center!important;align-items:stretch!important;gap:9px!important;text-align:center!important}
+ .view:not(.hidden) header>div>button,.view:not(.hidden) .toolbar>button{flex:1 1 42%!important;min-width:130px!important;justify-content:center!important}
+ #sendwayo-main-sidebar{color:#fff!important;background:#102b58!important}
+ #sendwayo-main-sidebar button{color:#fff!important;background-color:transparent!important;font-size:16px!important;line-height:1.35!important;min-height:48px!important;padding:12px 15px!important;white-space:normal!important;text-align:left!important}
+ #sendwayo-main-sidebar button span,#sendwayo-main-sidebar button i,#sendwayo-main-sidebar button svg{color:inherit!important;fill:currentColor!important;opacity:1!important;flex-shrink:0!important}

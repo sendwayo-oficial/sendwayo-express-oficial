@@ -1,0 +1,100 @@
+    let fee, neto;
+    if(isHTHT){
+      // Para NatCash/MonCash Haití→Haití, el importe ingresado ya está en HTG.
+      // La tarifa se consulta directamente en la tabla HTG, sin conversión DOP.
+      fee = typeof window.v162_getFeeRetiroHT === 'function'
+        ? Math.max(0, Number(window.v162_getFeeRetiroHT(monto)) || 0)
+        : (monto >= 2000 && monto <= 3999 ? 25 : 0);
+      neto = Math.max(0, monto - fee);
+      if(netoEl) netoEl.textContent = neto.toFixed(2) + ' HTG';
+      if(comEl) comEl.textContent = fee.toFixed(2) + ' HTG';
+      if(recEl) recEl.textContent = neto.toFixed(2) + ' HTG';
+      if(tasaEl) tasaEl.textContent = 'Tarifa Haití a Haití · Gross ' + monto.toFixed(2) + ' HTG · Comisión ' + fee.toFixed(2) + ' HTG · Neto ' + neto.toFixed(2) + ' HTG';
+    } else {
+      // Mantener la regla existente para las demás rutas; no convertir las rutas HT→HT.
+      fee = Math.round(monto * 0.08);
+      neto = Math.max(0, monto - fee);
+      if(netoEl) netoEl.textContent = neto.toFixed(2) + ' RD$';
+      if(comEl) comEl.textContent = fee.toFixed(2) + ' RD$';
+      if(recEl) recEl.textContent = neto.toFixed(2) + ' RD$';
+      if(tasaEl) tasaEl.textContent = 'Tasa 8% · ' + monto.toFixed(2) + ' RD$';
+    }
+  };
+
+  // Sobrescribir funcion original
+  window.v162_calcRetiro = window.v162_calcRetiro_CORREGIDO;
+  window.v162_onRetiroRuta = window.v162_calcRetiro_CORREGIDO;
+  window.v162_setRetiro = function(v){ 
+    const el=document.getElementById('v162-retiro-ruta');
+    if(el) el.value=v;
+    window.v162_calcRetiro_CORREGIDO();
+  };
+
+  // Para envio tambien
+  window.v162_calcEnvio_CORREGIDO = window.v162_calcRetiro_CORREGIDO;
+  // Sobrescribir si existe
+  if(window.calcularEnvio){
+    const origCalcularEnvio = window.calcularEnvio;
+    window.calcularEnvio = function(){
+      const rutaEl = document.getElementById('envio-ruta');
+      const ruta = rutaEl?.value||'';
+      if(ruta.includes('HT → HT') || ruta.includes('Naca')){
+        window.v162_calcRetiro_CORREGIDO();
+        // Copiar valores a envio UI si existe
+        const montoEl = document.getElementById('envio-monto');
+        const netoEl = document.getElementById('envio-monto-neto');
+        const comEl = document.getElementById('envio-comision');
+        const recEl = document.getElementById('envio-a-recibir');
+        if(montoEl && netoEl){
+          const retNeto = document.getElementById('v162-retiro-neto')?.innerText||'';
+          netoEl.innerText = retNeto;
+        }
+      } else {
+        origCalcularEnvio();
+      }
+    };
+  }
+
+  // Inicializar
+  setTimeout(()=>{ if(window.v162_calcRetiro_CORREGIDO) window.v162_calcRetiro_CORREGIDO(); }, 800);
+
+  // Asegurar que deposito tiene su pagina individual con Excel PDF CSV buscador numeracion
+  function asegurarDepositoPagina(){
+    let viewDep = document.getElementById('view-depositos');
+    if(!viewDep){
+      // Buscar view-mibanco o cuentas y clonar estructura
+      viewDep = document.getElementById('view-mibanco') || document.getElementById('view-cuentas');
+    }
+    // No tocamos estructura, solo habilitamos
+    if(viewDep){
+      viewDep.querySelectorAll('button, input, select').forEach(el=>{
+        el.disabled=false;
+        el.removeAttribute('disabled');
+        el.style.pointerEvents='auto';
+      });
+    }
+  }
+  setTimeout(asegurarDepositoPagina, 1000);
+})();
+</script>
+
+<script>
+// V171 - AJUSTAR COMISION Y ACREDITAR COMISION - SOLO ADMIN + SECRETAS
+document.addEventListener('DOMContentLoaded', function(){
+  // Crear modal ajustar comision/acreditar balance si no existe
+  function crearModalAjuste(){
+    let existing=document.getElementById('modal-ajuste-comision-v171');
+    if(existing) return existing;
+    const modal=document.createElement('div');
+    modal.id='modal-ajuste-comision-v171';
+    modal.className='hidden fixed inset-0 bg-black/60 z-[800] flex items-center justify-center p-4';
+    modal.innerHTML=`
+      <div class="bg-white rounded-2xl max-w-[480px] w-full shadow-2xl overflow-hidden">
+        <div class="bg-[#1a2f5a] text-white px-5 py-3 flex justify-between items-center">
+          <h3 class="font-bold text-[13px]">Ajustar / Acreditar Balance o Comisión - Admin + Secretas</h3>
+          <button onclick="document.getElementById('modal-ajuste-comision-v171').classList.add('hidden')" class="text-white text-xl">✕</button>
+        </div>
+        <div class="p-5 space-y-3">
+          <div><label class="block text-[11px] font-bold mb-1">ADMINISTRACIÓN PRIMERO - Seleccionar Remitente o Admin</label>
+            <select id="aj171-cuenta" class="w-full border rounded-xl p-3 text-[13px] bg-blue-50 border-blue-300">
+              <option value="admin-000">admin-000 - Administrador (admin) - SENDWAYO EXPRESS</option>

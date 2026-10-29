@@ -1,0 +1,100 @@
+      const sel=document.getElementById('v162-retiro-ruta');
+      if(sel){
+        const opt=[...sel.options].find(o=>/HT\s*(?:→|->)\s*HT.*(?:Natcash|MonCash|Montcash)/i.test(o.text));
+        if(opt && (!sel.value || !/HT\s*(?:→|->)\s*HT/i.test(sel.options[sel.selectedIndex]?.text||''))) sel.value=opt.value;
+        if(typeof window.v162_onRetiroRuta==='function') window.v162_onRetiroRuta();
+      }
+    }
+  };
+  window.sendwayoRetiroAction=function(action,id){
+    const arr=transacciones();
+    const t=arr.find(x=>String(x.id)===String(id));
+    if(!t) return;
+    if(action==='ver'){
+      if(typeof window.ver==='function') window.ver(id); else alert('Retiro '+id+'\n'+(t.ruta||'')+'\n'+(t.monto||''));
+      return;
+    }
+    if(action==='comprobante'){
+      if(t.estado==='Aprobado' && typeof window.verComprobante==='function') window.verComprobante(id);
+      else alert('El comprobante estará disponible después de aprobar el retiro.');
+      return;
+    }
+    if(action==='aprobar'){
+      if(typeof window.aprobar==='function') window.aprobar(id); else {t.estado='Aprobado';}
+      guardarTransacciones();
+      setTimeout(()=>{guardarTransacciones(); window.renderModuloSeparado('retiros');},80);
+      return;
+    }
+    if(action==='rechazar'){
+      t.estado='Rechazado'; t.actualizadoEn=new Date().toLocaleString('es-DO');
+      guardarTransacciones(); if(typeof window.renderPrincipal==='function') window.renderPrincipal(); window.renderModuloSeparado('retiros'); return;
+    }
+    if(action==='noCoincide'){
+      t.estado='No coincide'; t.actualizadoEn=new Date().toLocaleString('es-DO');
+      guardarTransacciones(); if(typeof window.renderPrincipal==='function') window.renderPrincipal(); window.renderModuloSeparado('retiros'); return;
+    }
+    if(action==='modificar'){
+      const actual=Number(t.montoValue)||0;
+      const entrada=prompt('Modificar monto del retiro '+id+' ('+(t.esHT?'HTG':'DOP')+'). Monto actual: '+actual, String(actual));
+      if(entrada===null || entrada.trim()==='') return;
+      const monto=Number(entrada);
+      if(!Number.isFinite(monto) || monto<=0){alert('Escribe un monto mayor que cero.');return;}
+      const ht=!!t.esHT || /HT\s*→\s*HT|Naca a Naca|Montcash a Montcash|MonCash.*Tarifa por rango/i.test(normaliza(t.ruta)+' '+normaliza(t.rutaExacta));
+      let fee=0;
+      if(ht){
+        if(typeof window.v162_getFeeRetiroHT==='function') fee=Number(window.v162_getFeeRetiroHT(monto))||0;
+        else fee=monto<=1000?25:monto<=2000?50:monto<=3999?81:monto<=7999?130:monto<=11999?248:monto<=19999?342:monto<=39999?576:monto<=59999?945:monto<=74999?1260:monto<=99999?1440:Math.round(monto*.06);
+      } else fee=Math.round(monto*.08);
+      const neto=Math.max(0,monto-fee); const moneda=ht?'HTG':'DOP';
+      t.montoValue=monto; t.monto=monto+' '+moneda; t.fee=fee; t.neto=neto; t.feeText='Comisión '+fee.toFixed(2)+' '+moneda; t.montoRecibido=neto.toFixed(2)+' '+moneda; t.moneda=ht?'GOURDES':'PESOS'; t.esHT=ht;
+      if(t.estado==='No coincide' || t.estado==='Rechazado') t.estado='Pendiente';
+      t.actualizadoEn=new Date().toLocaleString('es-DO'); guardarTransacciones(); if(typeof window.renderPrincipal==='function') window.renderPrincipal(); window.renderModuloSeparado('retiros'); return;
+    }
+    if(action==='borrar'){
+      if(!confirm('¿Borrar el retiro '+id+'?')) return;
+      const idx=arr.findIndex(x=>String(x.id)===String(id)); if(idx>=0) arr.splice(idx,1);
+      guardarTransacciones(); if(typeof window.renderPrincipal==='function') window.renderPrincipal(); window.renderModuloSeparado('retiros');
+    }
+  };
+  window.sendwayoFiltrarRetiros=function(valor){
+    const q=normaliza(valor).toLocaleLowerCase();
+    const tbody=document.getElementById('tabla-retiros-body'); if(!tbody) return;
+    tbody.querySelectorAll('tr').forEach(tr=>{tr.style.display=normaliza(tr.textContent).toLocaleLowerCase().includes(q)?'':'none';});
+  };
+  function dibujarRetiros(){
+    const cont=asegurarVista();
+    const registros=transacciones().filter(t=>t && t.tipo==='Retiro').slice().sort((a,b)=>(Number(b.timestamp)||0)-(Number(a.timestamp)||0));
+    cont.innerHTML=`
+      <section class="p-3 md:p-4 space-y-3 bg-[#f7f9fc] rounded-xl">
+        <header class="bg-white border rounded-xl p-3 shadow-sm">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="font-black text-sm">RETIROS</div>
+            <div class="flex flex-wrap items-center gap-2">
+              <button type="button" onclick="sendwayoAbrirVentanillaRetiro()" class="bg-[#0f2440] text-white font-bold text-xs px-5 py-3 rounded-full shadow">＋ Agregar nuevo retiro</button>
+              <input id="sendwayo-retiros-buscar" type="search" placeholder="Buscador: número, remitente, beneficiario o ruta…" oninput="sendwayoFiltrarRetiros(this.value)" class="border rounded-full px-4 py-3 text-xs w-64 max-w-full outline-blue-500" />
+              <button type="button" onclick="v162_exportarModulo('retiros','excel')" class="bg-green-600 text-white font-bold text-xs px-4 py-3 rounded-full">Excel</button>
+              <button type="button" onclick="v162_exportarModulo('retiros','pdf')" class="bg-red-600 text-white font-bold text-xs px-4 py-3 rounded-full">PDF</button>
+              <button type="button" onclick="v162_exportarModulo('retiros','csv')" class="bg-blue-700 text-white font-bold text-xs px-4 py-3 rounded-full">CSV</button>
+            </div>
+          </div>
+          <div class="text-[11px] text-gray-600 mt-2">Cada retiro se registra como Pendiente. NatCash Naca a Naca y MonCash Montcash a Montcash usan la tarifa Haití–Haití por rango en gourdes HTG.</div>
+        </header>
+        <div class="bg-white border rounded-xl shadow-sm overflow-x-auto">
+          <table id="tabla-retiros" class="w-full text-xs min-w-[900px]">
+            <thead class="bg-[#edf2f8]"><tr><th class="p-3 text-left">N°</th><th class="p-3 text-left">ID / FECHA Y HORA</th><th class="p-3 text-left">RETIRO / RUTA</th><th class="p-3 text-left">MONTO / COMISIÓN</th><th class="p-3 text-left">BENEFICIARIO</th><th class="p-3 text-left">ESTADO</th><th class="p-3 text-left">ACCIONES</th></tr></thead>
+            <tbody id="tabla-retiros-body"></tbody>
+          </table>
+        </div>
+      </section>`;
+    const tbody=cont.querySelector('#tabla-retiros-body');
+    if(!registros.length){tbody.innerHTML='<tr><td colspan="7" class="p-8 text-center text-gray-500">Todavía no hay retiros registrados. Usa “Agregar nuevo retiro” para abrir la ventanilla.</td></tr>';return;}
+    tbody.innerHTML=registros.map((t,i)=>{
+      const id=normaliza(t.id); const idJs=js(id);
+      const estado=normaliza(t.estado||'Pendiente');
+      const estadoColor=estado==='Aprobado'?'bg-green-100 text-green-800':estado==='Rechazado'?'bg-red-100 text-red-800':estado==='No coincide'?'bg-purple-100 text-purple-800':'bg-yellow-100 text-yellow-800';
+      let botones=`<button type="button" onclick="sendwayoRetiroAction('ver','${idJs}')" class="bg-[#1e3a5f] text-white px-3 py-2 rounded-full text-[10px]">Ver</button> <button type="button" onclick="sendwayoRetiroAction('modificar','${idJs}')" class="bg-white border px-3 py-2 rounded-full text-[10px]">Modificar</button> <button type="button" onclick="sendwayoRetiroAction('borrar','${idJs}')" class="bg-white border border-red-200 text-red-700 px-3 py-2 rounded-full text-[10px]">Borrar</button>`;
+      if(estado==='Aprobado') botones+=` <button type="button" onclick="sendwayoRetiroAction('comprobante','${idJs}')" class="bg-orange-500 text-white px-3 py-2 rounded-full text-[10px]">Comprobante</button>`;
+      else botones+=` <button type="button" onclick="sendwayoRetiroAction('aprobar','${idJs}')" class="bg-green-600 text-white px-3 py-2 rounded-full text-[10px]">Aprobado</button> <button type="button" onclick="sendwayoRetiroAction('rechazar','${idJs}')" class="bg-red-600 text-white px-3 py-2 rounded-full text-[10px]">Rechazado</button> <button type="button" onclick="sendwayoRetiroAction('noCoincide','${idJs}')" class="bg-purple-600 text-white px-3 py-2 rounded-full text-[10px]">No coincide</button>`;
+      return `<tr class="border-t hover:bg-blue-50"><td class="p-3 font-bold">${String(i+1).padStart(2,'0')}</td><td class="p-3"><div class="font-bold">${html(id)}</div><div class="text-[10px] text-gray-600">${html(t.fecha||t.hora||'')}</div></td><td class="p-3"><div class="font-semibold">${html(t.ruta||'Retiro')}</div><div class="text-[10px] text-gray-600">${html(t.rutaExacta||'')}</div></td><td class="p-3"><div class="font-bold">${html(t.monto??'')}</div><div class="text-[10px] text-gray-600">${html(t.feeText||((Number(t.fee)||0)+' '+(t.esHT?'HTG':'DOP')))}</div></td><td class="p-3">${html(t.beneficiario||'')}</td><td class="p-3"><span class="inline-block rounded-full px-3 py-1 ${estadoColor}">${html(estado)}</span></td><td class="p-3"><div class="flex flex-wrap gap-1.5 min-w-[300px]">${botones}</div></td></tr>`;
+    }).join('');
+  }

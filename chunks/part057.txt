@@ -1,0 +1,100 @@
+            crearModalAjuste().classList.remove('hidden');
+          };
+        }
+      }
+    });
+    // Botones en view-ajustes y view-comisiones
+    const viewAjustes = document.getElementById('view-ajustes') || document.getElementById('view-comisiones');
+    if(viewAjustes){
+      const btn=viewAjustes.querySelector('button');
+      if(btn) btn.onclick = ()=>crearModalAjuste().classList.remove('hidden');
+    }
+  }
+  setTimeout(hookAjusteButtons, 1000);
+  setTimeout(hookAjusteButtons, 3000);
+
+  // Habilitar tablero y deposito - no tocar nada mas
+  function habilitarTableroDeposito(){
+    document.querySelectorAll('#view-tablero button, #view-tablero input, #view-tablero select').forEach(el=>{
+      el.disabled=false;
+      el.removeAttribute('disabled');
+      el.style.pointerEvents='auto';
+      el.style.opacity='1';
+    });
+    const depView = document.getElementById('view-mibanco') || document.getElementById('view-depositos') || document.getElementById('view-cuentas');
+    if(depView){
+      depView.querySelectorAll('button, input, select').forEach(el=>{
+        el.disabled=false;
+        el.removeAttribute('disabled');
+        el.style.pointerEvents='auto';
+        el.style.opacity='1';
+      });
+    }
+  }
+  habilitarTableroDeposito();
+  setTimeout(habilitarTableroDeposito, 2000);
+});
+</script>
+
+<script>
+/* V7: correcciones puntuales solicitadas, conservando estructura y bienvenida. */
+
+(function(){
+  // Retiro Haití→Haití se calcula en gourdes reales, sin convertir el importe desde pesos dominicanos.
+  window.v162_calcRetiro_CORREGIDO = function(){
+    const montoEl=document.getElementById('v162-retiro-monto');
+    const rutaEl=document.getElementById('v162-retiro-ruta');
+    if(!montoEl || !rutaEl) return;
+    const monto=parseFloat(montoEl.value)||0;
+    const ruta=rutaEl.value||'';
+    const esHTHT = /HT\s*→\s*HT|HT\s*->\s*HT|Naca a Naca|Montcash a Montcash|MonCash.*Tarifa por rango/i.test(ruta);
+    let fee=0, neto=0, moneda='DOP', tasa='Tarifa 8% - Pesos dominicanos';
+    if(esHTHT){
+      moneda='HTG';
+      // Usa la tabla Haití-Haití por rango existente (p. ej. 2,000 HTG → 81 HTG de comisión).
+      fee = typeof window.v162_getFeeRetiroHT==='function' ? (Number(window.v162_getFeeRetiroHT(monto))||0) : (monto<=1000?25:monto<=1999?25:monto<=3999?25:monto<=7999?130:monto<=11999?248:monto<=19999?342:monto<=39999?576:monto<=59999?945:monto<=74999?1260:monto<=99999?1440:Math.round(monto*0.06));
+      neto=Math.max(0,monto-fee);
+      tasa='Tarifa Haití a Haití por rango - Gourdes HTG';
+      const label=document.getElementById('v162-retiro-monto-label');
+      if(label) label.innerText='MONTO EN GOURDES HAITIANOS (HTG) - Haití a Haití';
+    } else {
+      fee=Math.round(monto*0.08);
+      neto=Math.max(0,monto-fee);
+      const label=document.getElementById('v162-retiro-monto-label');
+      if(label) label.innerText='MONTO EN PESOS DOMINICANOS (RD$)';
+    }
+    const netoEl=document.getElementById('v162-retiro-neto');
+    const comEl=document.getElementById('v162-retiro-com');
+    const recEl=document.getElementById('v162-retiro-rec');
+    const tasaEl=document.getElementById('v162-retiro-tasa');
+    if(netoEl) netoEl.innerText=neto.toFixed(2)+' '+moneda;
+    if(comEl) comEl.innerText=fee.toFixed(2)+' '+moneda;
+    if(recEl) recEl.innerText=neto.toFixed(2)+' '+moneda;
+    if(tasaEl) tasaEl.innerText=tasa;
+    montoEl.dataset.neto=String(neto); montoEl.dataset.fee=String(fee);
+    montoEl.dataset.rec=neto.toFixed(2)+' '+moneda; montoEl.dataset.esHT=esHTHT?'1':'0';
+  };
+  window.v162_calcRetiro=window.v162_calcRetiro_CORREGIDO;
+  window.v162_onRetiroRuta=function(){ window.v162_calcRetiro_CORREGIDO(); };
+  window.v162_setRetiro=function(ruta){
+    const el=document.getElementById('v162-retiro-ruta');
+    if(el){ el.value=ruta; window.v162_onRetiroRuta(); }
+    const modal=document.getElementById('modal-retiro-v162'); if(modal) modal.classList.remove('hidden');
+  };
+
+  // Botón Depósito del tablero: siempre abre la ventanilla de depósito y no queda sin acción.
+  const abrirOriginal=window.abrirVentanillaTablero;
+  window.abrirVentanillaTablero=function(ruta,tipo){
+    if(String(tipo||'').toLowerCase().includes('deposit')){
+      const modal=document.getElementById('modal-deposito-v162')||document.getElementById('modal-deposito-exacto');
+      if(modal) modal.classList.remove('hidden');
+      const quien=document.getElementById('v162-dep-quien');
+      if(quien && window.currentUser) quien.value=(currentUser.nombre||'')+' - '+(currentUser.codigo||currentUser.id||'')+' ('+(currentUser.role||'')+')';
+      return;
+    }
+    if(typeof abrirOriginal==='function') return abrirOriginal(ruta,tipo);
+    if(String(tipo||'').toLowerCase()==='retiro') window.v162_setRetiro(ruta);
+  };
+
+  // Exportación de la tabla del módulo (PDF, Excel/CSV) sin insertar etiquetas script sin cerrar.
+  function tablaActual(view){ return document.querySelector('#tabla-'+view+'-body')?.closest('table') || document.querySelector('#view-'+view+' table'); }

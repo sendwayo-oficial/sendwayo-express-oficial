@@ -1,0 +1,100 @@
+ #sendwayo-main-sidebar button{gap:12px!important}
+ #login-screen>div{width:100%!important;max-width:440px!important;margin:auto!important;padding:24px!important;border-radius:22px!important}
+ #login-screen label,#login-screen p{font-size:14px!important}
+ #login-screen input,#login-screen button{font-size:17px!important;min-height:48px!important;width:100%!important}
+ /* Formularios flotantes ocupan la pantalla del teléfono y centran el contenido. */
+ body [id^="modal-"],body [id*="-modal"],body .fixed.inset-0:not(#sendwayo-menu-shade):not(#login-screen):not(#welcome-landing){box-sizing:border-box!important}
+ body [id^="modal-"].fixed,body [id*="-modal"].fixed,body .fixed.inset-0:not(#sendwayo-menu-shade):not(#login-screen):not(#welcome-landing){padding:10px!important;align-items:center!important;justify-content:center!important}
+ body [id^="modal-"]>div,body [id*="-modal"]>div,body .fixed.inset-0:not(#sendwayo-menu-shade):not(#login-screen):not(#welcome-landing)>div{width:100%!important;max-width:100%!important;max-height:calc(100dvh - 20px)!important;overflow-y:auto!important;margin:auto!important;border-radius:18px!important;padding:18px!important}
+}
+@media(min-width:768px) and (max-width:1024px){.view:not(.hidden){width:100%!important;max-width:100%!important}.view:not(.hidden) button,.view:not(.hidden) input,.view:not(.hidden) select{min-height:42px!important}}
+</style>
+<script id="sendwayo-mobile-focus-v5-script">
+(function(){
+ 'use strict';
+ const $=id=>document.getElementById(id);
+ const MOBILE=()=>window.matchMedia('(max-width: 767px)').matches;
+ function activeUser(){try{return window.currentUser||currentUser||null}catch(e){return window.currentUser||null}}
+ function hideNonSelected(view){
+   if(!MOBILE())return;
+   const key=String(view||'tablero').replace(/^view-/,'');
+   document.querySelectorAll('.view').forEach(el=>{
+     const id=(el.id||'').replace(/^view-/,'');
+     el.classList.toggle('hidden',id!==key);
+     if(id===key){el.style.display='block';el.style.width='100%';el.style.maxWidth='100%';}
+     else el.style.removeProperty('display');
+   });
+   // The dashboard is a page of its own, never left underneath a selected module.
+   if(key!=='tablero'){$('view-tablero')?.classList.add('hidden');}
+   document.body.dataset.sendwayoActiveView=key;
+ }
+ // Wrap the final router, after all previous versions have installed themselves.
+ const prior=window.showView;
+ if(typeof prior==='function')window.showView=function(view){const result=prior.apply(this,arguments);hideNonSelected(view);return result;};
+ document.addEventListener('click',function(e){
+   const b=e.target.closest('button[onclick*="showView("]');if(!b)return;
+   const m=(b.getAttribute('onclick')||'').match(/showView\(['"]([^'"]+)['"]\)/);if(m)setTimeout(()=>hideNonSelected(m[1]),0);
+ },true);
+ window.addEventListener('resize',()=>{const v=document.body.dataset.sendwayoActiveView;if(v)hideNonSelected(v);});
+ // Inactivity lock: retain login for less than 40 minutes; require credentials after 40 minutes.
+ const LIMIT=40*60*1000, KEY='sendwayo_express_oficial_20261029_last_activity_v5';let locking=false;
+ function loggedIn(){const u=activeUser();return !!(u&&(u.id||u.codigo||u.email));}
+ function touch(){if(loggedIn())try{sessionStorage.setItem(KEY,String(Date.now()));}catch(e){}}
+ function forceLock(){if(locking||!loggedIn())return;locking=true;
+   document.querySelectorAll('.view').forEach(v=>v.classList.add('hidden'));
+   $('welcome-landing')?.classList.add('hidden');
+   const login=$('login-screen');if(login){login.classList.remove('hidden');login.style.display='flex';}
+   if($('login-usuario'))$('login-usuario').value='';if($('login-password'))$('login-password').value='';
+   if($('login-error')){$('login-error').textContent='Sesión cerrada por 40 minutos de inactividad. Inicie sesión nuevamente.';$('login-error').classList.remove('hidden');}
+   try{window.currentUser=null;currentUser=null}catch(e){window.currentUser=null}
+   try{sessionStorage.removeItem(KEY)}catch(e){}
+   document.body.dataset.sendwayoActiveView='';locking=false;
+ }
+ function check(){if(!loggedIn())return;let last=0;try{last=Number(sessionStorage.getItem(KEY)||0)}catch(e){}if(!last){touch();return;}if(Date.now()-last>=LIMIT)forceLock();}
+ ['pointerdown','keydown','touchstart','click','scroll'].forEach(ev=>document.addEventListener(ev,()=>{check();touch();},{passive:true,capture:true}));
+ window.addEventListener('focus',check);window.addEventListener('pageshow',check);document.addEventListener('visibilitychange',()=>{if(!document.hidden)check()});
+ const oldLogin=window.intentarLogin;if(typeof oldLogin==='function')window.intentarLogin=function(){const r=oldLogin.apply(this,arguments);setTimeout(()=>{if(loggedIn()){try{sessionStorage.setItem(KEY,String(Date.now()))}catch(e){}hideNonSelected('tablero');}},0);return r;};
+ const oldLogout=window.cerrarSesion;if(typeof oldLogout==='function')window.cerrarSesion=function(){const r=oldLogout.apply(this,arguments);try{sessionStorage.removeItem(KEY)}catch(e){}document.body.dataset.sendwayoActiveView='';return r;};
+ // For remitters, hide dashboard counters that disclose how many agents/remitters exist.
+ function applyRemitterPrivacy(){const u=activeUser();if(!u||!MOBILE())return;const role=String(u.role||u.rol||'').toLowerCase();if(!/remitente|remitter/.test(role))return;
+   document.querySelectorAll('#view-tablero *').forEach(el=>{if(el.children.length)return;const t=(el.textContent||'').trim();if(/\b(total|cantidad|número|numero)\b.{0,35}\b(agentes|remitentes)\b|\b(agentes|remitentes)\b.{0,35}\b(total|cantidad|número|numero)\b/i.test(t)){const card=el.closest('.rounded-xl,.rounded-2xl,.border,.shadow,article,section')||el;card.style.setProperty('display','none','important');}});
+ }
+ setInterval(()=>{check();applyRemitterPrivacy();},15000);
+ document.addEventListener('DOMContentLoaded',()=>{if(loggedIn()){touch();const v=document.body.dataset.sendwayoActiveView||'tablero';hideNonSelected(v);} });
+})();
+</script>
+
+
+<script id="sendwayo-v7-focused-fixes">
+(function(){
+ 'use strict';
+ const $=id=>document.getElementById(id);
+ const moneyText=id=>{const e=$(id);return e?String(e.textContent||'0').trim():'0';};
+ const getUser=()=>{try{return window.currentUser||currentUser||null}catch(e){return window.currentUser||null}};
+ const roleName=u=>{const r=String(u?.role||u?.rol||'').toUpperCase();return r.includes('ADMIN')?'ADMINISTRADOR':r.includes('AGENTE')?'AGENTE':'REMITENTE';};
+ function buildIdentityStrip(){
+   const root=$('view-tablero')?.parentElement;if(!root)return;
+   let strip=$('sendwayo-v7-user-strip');
+   if(!strip){strip=document.createElement('div');strip.id='sendwayo-v7-user-strip';strip.className='bg-[#0f2440] text-white rounded-2xl p-3 mb-4 flex flex-wrap items-center justify-between gap-3 shadow';root.insertBefore(strip,root.firstChild);}
+   const u=getUser()||{};const nm=u.nombre||u.name||u.email||'Usuario';const id=u.id||u.uid||'—';const code=u.codigo||u.codigo2||'—';
+   strip.innerHTML='<div class="min-w-0"><div class="font-extrabold text-base">'+esc(nm)+'</div><div class="text-xs opacity-90">'+esc(roleName(u))+' · ID: '+esc(id)+' · Código: '+esc(code)+'</div></div><div class="flex flex-wrap items-center gap-2 text-sm"><span class="rounded-full bg-white/15 px-3 py-2" id="sendwayo-v7-date">—</span><span class="rounded-full bg-white/15 px-3 py-2" id="sendwayo-v7-clock">—</span><span class="rounded-full bg-orange-400 text-black font-bold px-3 py-2" id="sendwayo-v7-duration">Tiempo: 00:00</span></div>';
+ }
+ function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
+ function buildDashboard(){
+   const v=$('view-tablero');if(!v)return;
+   const old=v.querySelector('#sendwayo-v7-dashboard-cards');if(old){refreshDashboardAmounts();return;}
+   v.innerHTML='<div id="sendwayo-v7-dashboard-cards" class="p-3 md:p-6"><article class="sendwayo-v7-money-card bg-[#12366a] text-white"><div class="sendwayo-v7-label">Balance en Gourdes Haitianos (HTG)</div><div class="sendwayo-v7-amount"><span id="sendwayo-v7-bal-htg">0</span> HTG</div></article><article class="sendwayo-v7-money-card bg-white border border-blue-100 text-[#12366a]"><div class="sendwayo-v7-label">Balance en Pesos Dominicanos (DOP)</div><div class="sendwayo-v7-amount">RD$ <span id="sendwayo-v7-bal-dop">0</span></div></article><article class="sendwayo-v7-money-card bg-white border border-orange-100 text-[#12366a]"><div class="sendwayo-v7-label">Comisión en Gourdes Haitianos (HTG)</div><div class="sendwayo-v7-amount"><span id="sendwayo-v7-com-htg">0</span> HTG</div></article><article class="sendwayo-v7-money-card bg-orange-400 text-white"><div class="sendwayo-v7-label">Comisión en Pesos Dominicanos (DOP)</div><div class="sendwayo-v7-amount">RD$ <span id="sendwayo-v7-com-dop">0</span></div></article></div>';
+   // Remove dashboard-only legacy tables/cards/secret panels; preserve every separate module element.
+   const parent=v.parentElement;if(parent){[...parent.children].forEach(el=>{if(el===v||el.id==='sendwayo-v7-user-strip'||el.classList.contains('view'))return;el.hidden=true;el.style.display='none';});}
+   refreshDashboardAmounts();
+ }
+ function refreshDashboardAmounts(){
+   const pairs=[['sendwayo-v7-bal-htg','top-bal-htg'],['sendwayo-v7-bal-dop','top-bal-rd'],['sendwayo-v7-com-htg','top-com-htg'],['sendwayo-v7-com-dop','top-com-rd']];
+   pairs.forEach(([dest,src])=>{const d=$(dest);if(d)d.textContent=moneyText(src);});
+ }
+ function selectedView(view){
+   const key=String(view||'tablero').replace(/^view-/,'');
+   const id='view-'+key;let target=$(id);
+   if(!target && key==='deposito')target=$('view-depositos');
+   if(!target && key==='beneficiario')target=$('view-beneficiarios');
+   if(!target && key==='paquetiko')target=$('view-paquetikos');
