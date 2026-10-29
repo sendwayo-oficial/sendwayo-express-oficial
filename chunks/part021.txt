@@ -1,0 +1,100 @@
+    });
+    htmlAgentes += `</tbody></table>`;
+    agentesView.innerHTML = htmlAgentes;
+  }
+},1000);
+
+console.log('V147 - 5 Agentes con código AG-001 AG-HERACE etc - 15 Remitentes REM-001 - Balance 2000 DOP 2000 HTG Comisión 1000 - Admin puede acreditar ajustar balance comisión - Secretas con todos agentes admin remitentes con contraseña - Haiti-Haiti 2000 gourdes 25 fee 1975 comprobante - No tocar nada más');
+</script>
+
+
+<script>
+// V149 - BUENO SIN BURLARSE - LOGIN OBLIGATORIO - GUARDAR ACTIVADO - SUGERENCIA INMEDIATA - NUMERACION 01 02 SIN EXPLICACION
+
+window.USUARIOS_LOGIN = [];
+if(typeof REMITENTES !== 'undefined'){
+  REMITENTES.forEach(rem=>{
+    window.USUARIOS_LOGIN.push({usuario:rem.email, id:rem.id, codigo:rem.codigo, celular:rem.celular, telefono:rem.telefono, password:rem.celular, password2:rem.telefono, nombre:rem.nombre, role:'REMITENTE'});
+  });
+}
+
+window.intentarLogin = function(){
+  const u = document.getElementById('login-usuario')?.value.trim()||'';
+  const p = document.getElementById('login-password')?.value.trim()||'';
+  const err = document.getElementById('login-error');
+  if(!u || !p){ if(err){ err.innerText='Ponga usuario y contraseña'; err.classList.remove('hidden'); } return; }
+  const user = window.USUARIOS_LOGIN.find(x=> x.usuario.toLowerCase()===u.toLowerCase() || x.id.toLowerCase()===u.toLowerCase() || x.celular===u || x.telefono===u || (x.codigo&&x.codigo.toLowerCase()===u.toLowerCase()));
+  if(!user){ if(err){ err.innerText='Usuario no encontrado'; err.classList.remove('hidden'); } return; }
+  const valids = [user.password, user.password2, user.celular, user.telefono].filter(Boolean);
+  if(!valids.includes(p)){ if(err){ err.innerText='Contraseña incorrecta'; err.classList.remove('hidden'); } return; }
+  window.currentUser = {id:user.id, name:user.nombre, nombre:user.nombre, role:user.role, email:user.usuario, celular:user.celular, codigo:user.codigo};
+  document.getElementById('login-screen').classList.add('hidden');
+  const topUser = document.getElementById('user-top'); if(topUser) topUser.innerText = user.nombre + ' ' + user.codigo;
+  alert('Bienvenido '+user.nombre);
+  // habilitar todo
+  document.querySelectorAll('button').forEach(b=>{ b.disabled=false; b.style.pointerEvents='auto'; b.style.opacity='1'; });
+}
+
+// Activar botones guardar - estaban inactivados
+window.activarGuardars = function(){
+  document.querySelectorAll('button').forEach(btn=>{
+    if(btn.textContent.toLowerCase().includes('guardar')){
+      btn.disabled=false;
+      btn.style.pointerEvents='auto';
+      btn.style.opacity='1';
+      /* removed invalid empty class token */;
+    }
+    // todos los botones habilitados
+    btn.disabled=false;
+    btn.style.pointerEvents='auto';
+  });
+}
+setTimeout(window.activarGuardars, 800);
+setTimeout(window.activarGuardars, 2000);
+
+// Sugerencia inmediata al escribir - números y nombres registrados
+window.BENEF_DB = [];
+
+window.showSug = function(input, listId){
+  const val = input.value.toLowerCase();
+  const list = document.getElementById(listId);
+  if(!list) return;
+  if(val.length<1){ list.classList.add('hidden'); return; }
+  const filtered = window.BENEF_DB.filter(b=> b.nombre.toLowerCase().includes(val) || b.telefono.includes(val));
+  if(filtered.length===0){ list.classList.add('hidden'); return; }
+  list.innerHTML='';
+  filtered.slice(0,5).forEach(b=>{
+    const d=document.createElement('div');
+    d.className='p-2 hover:bg-blue-50 cursor-pointer border-b text-[11px]';
+    d.innerHTML='<b>'+b.nombre+'</b> - '+b.telefono;
+    d.onclick=()=>{ input.value=b.nombre+' - '+b.telefono; list.classList.add('hidden'); 
+      // llenar tel si es nombre
+      if(input.id.includes('nombre')){ const tel=document.getElementById(input.id.replace('nombre','tel')); if(tel) tel.value=b.telefono; }
+    };
+    list.appendChild(d);
+  });
+  list.classList.remove('hidden');
+}
+
+// Inicializar sugerencias en modales
+setTimeout(()=>{
+  ['envio-ben-nombre-manual','envio-ben-tel-manual','retiro-ben-nombre-manual','retiro-ben-tel-manual','rec-numero-exacto','paq-numero-exacto'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){
+      let listId='sug-'+id;
+      let list=document.getElementById(listId);
+      if(!list){
+        list=document.createElement('div');
+        list.id=listId;
+        list.className='hidden absolute bg-white border rounded-lg shadow-lg z-[500] w-full max-h-32 overflow-auto';
+        el.parentNode.style.position='relative';
+        el.parentNode.appendChild(list);
+      }
+      el.addEventListener('input', function(){ window.showSug(this, listId); });
+      el.addEventListener('focus', function(){ if(this.value.length>=1) window.showSug(this, listId); });
+    }
+  });
+},1500);
+
+// Numeración - quitar explicación Antiguo a reciente - solo 01 02 - hoy 01 ayer 02
+window.fixNum = function(){
