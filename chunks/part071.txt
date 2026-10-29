@@ -1,0 +1,100 @@
+    const welcome = $('welcome-landing');
+    if (welcome) { welcome.classList.remove('hidden'); welcome.style.removeProperty('display'); welcome.style.removeProperty('visibility'); }
+    const login = $('login-screen');
+    if (login) { login.classList.add('hidden'); login.style.removeProperty('display'); }
+    if ($('login-usuario')) $('login-usuario').value = '';
+    if ($('login-password')) $('login-password').value = '';
+    if ($('login-error')) $('login-error').classList.add('hidden');
+    refreshBellCount();
+  }
+  function openLogin() {
+    document.body.classList.remove('sendwayo-authenticated');
+    document.body.classList.add('sendwayo-login-open');
+    hideViewsAndModals();
+    const welcome = $('welcome-landing'); if (welcome) welcome.style.display = 'none';
+    const login = $('login-screen');
+    if (login) { login.classList.remove('hidden'); login.style.display = 'flex'; login.style.visibility = 'visible'; }
+    setTimeout(() => $('login-usuario')?.focus(), 30);
+  }
+  function finishLogin() {
+    const u = window.currentUser || (() => { try { return typeof currentUser !== 'undefined' ? currentUser : null; } catch (_) { return null; } })();
+    if (u && (u.id || u.uid || u.codigo || u.email)) {
+      successfulLoginThisPage = true;
+      try { if (typeof currentUser !== 'undefined') currentUser = u; } catch (_) {}
+      window.currentUser = u;
+      document.body.classList.add('sendwayo-authenticated');
+      document.body.classList.remove('sendwayo-login-open');
+      const welcome = $('welcome-landing'); if (welcome) welcome.style.display = 'none';
+      const login = $('login-screen'); if (login) { login.classList.add('hidden'); login.style.display = 'none'; }
+      updateIdentity();
+      installAccountSelectors();
+      applyIdentityDefaults(true);
+      hideFalseCredentialHints();
+      refreshBellCount();
+      // La primera pantalla privada siempre es el tablero, pero solo tras validar las credenciales.
+      setTimeout(() => {
+        if (document.body.classList.contains('sendwayo-authenticated') && typeof window.showView === 'function') window.showView('tablero');
+        else { const dashboard = $('view-tablero'); if (dashboard) { document.querySelectorAll('.view').forEach(el => el.classList.add('hidden')); dashboard.classList.remove('hidden'); dashboard.style.display = 'block'; } }
+      }, 0);
+      return true;
+    }
+    document.body.classList.remove('sendwayo-authenticated');
+    document.body.classList.add('sendwayo-login-open');
+    const login = $('login-screen'); if (login) { login.classList.remove('hidden'); login.style.display = 'flex'; }
+    const welcome = $('welcome-landing'); if (welcome) welcome.style.display = 'none';
+    return false;
+  }
+  window.v162_showLogin = openLogin;
+  window.v162_goWelcome = showWelcome;
+  const priorLogin = window.intentarLogin;
+  window.intentarLogin = function () {
+    const username = txt($('login-usuario')?.value);
+    const password = txt($('login-password')?.value);
+    if (!username || !password) {
+      document.body.classList.add('sendwayo-login-open');
+      const err = $('login-error'); if (err) { err.textContent = 'Es obligatorio introducir usuario/correo e contraseña.'; err.classList.remove('hidden'); }
+      if (!username) $('login-usuario')?.focus(); else $('login-password')?.focus();
+      return;
+    }
+    // The existing credential validator remains the authority; the screen changes only if it sets a user.
+    if (typeof priorLogin === 'function') priorLogin.apply(this, arguments);
+    setTimeout(finishLogin, 120);
+  };
+  window.cerrarSesion = function () {
+    if (!window.confirm('¿Desea cerrar sesión?')) return;
+    showWelcome();
+  };
+  ['login-usuario', 'login-password'].forEach(id => {
+    const el = $(id); if (!el || el.dataset.sendwayoEnterBound) return;
+    el.dataset.sendwayoEnterBound = '1';
+    el.addEventListener('keydown', event => {
+      if (event.key === 'Enter') { event.preventDefault(); window.intentarLogin(); }
+    });
+  });
+
+  // Identidad completa y visible en la parte superior de cada pantalla autenticada.
+  function installIdentityStrip() {
+    const top = Array.from(document.body.children).find(el => el.classList?.contains('sticky') && el.querySelector('#user-top'));
+    if (!$('sendwayo-active-identity-strip')) {
+      const strip = document.createElement('div'); strip.id = 'sendwayo-active-identity-strip';
+      strip.innerHTML = '<span>Usuario activo:</span><strong id="sendwayo-active-name"></strong><span>· ID:</span><strong id="sendwayo-active-id"></strong><span>· Código:</span><strong id="sendwayo-active-code"></strong>';
+      if (top) top.insertAdjacentElement('afterend', strip); else document.body.insertBefore(strip, document.body.firstChild);
+    }
+  }
+  function updateIdentity() {
+    const u = current(); if (!u) return;
+    const a = accountForUser() || u;
+    const name = txt(a.nombre || a.name || u.nombre || u.name || 'Usuario');
+    const id = txt(a.id || u.id || u.uid || '');
+    const code = txt(a.codigo || a.codigo2 || u.codigo || '');
+    const topUser = $('user-top');
+    if (topUser) { topUser.textContent = `${name} · ID: ${id} · Cód.: ${code}`; topUser.title = `${name} | ID: ${id} | Código: ${code}`; topUser.style.maxWidth = '340px'; topUser.style.whiteSpace = 'normal'; topUser.style.fontSize = '9px'; }
+    if ($('sendwayo-active-name')) $('sendwayo-active-name').textContent = name;
+    if ($('sendwayo-active-id')) $('sendwayo-active-id').textContent = id;
+    if ($('sendwayo-active-code')) $('sendwayo-active-code').textContent = code;
+    installModalIdentity();
+  }
+
+  // Show the signed-in account at the top of each money-operation form, as requested.
+  function installModalIdentity() {
+    const ids = ['modal-envio-v162','modal-retiro-v162','modal-recargas-v162','modal-paquetikos-v162','modal-envio-compacto'];

@@ -1,0 +1,100 @@
+  #sendwayo-language-public, #sendwayo-language-private {
+    max-width: 135px; min-width: 92px; background: #fff; color: #0f2440;
+    border: 0; outline: none; font-size: 10px; font-weight: 800;
+  }
+  #sendwayo-active-identity-strip {
+    display: none; align-items: center; flex-wrap: wrap; gap: 6px;
+    padding: 7px 12px; color: #0f2440; background: #fff; border-bottom: 1px solid #dbe3ed;
+    font-size: 11px; line-height: 1.4;
+  }
+  body.sendwayo-authenticated #sendwayo-active-identity-strip { display: flex !important; }
+  #sendwayo-active-identity-strip strong { font-weight: 900; }
+  .sendwayo-modal-identity { display: flex; flex-direction: column; gap: 3px; margin: 0 0 10px; padding: 9px 11px; border: 1px solid #bfdbfe; border-radius: 12px; background: #eff6ff; color: #0f2440; font-size: 10px; line-height: 1.4; }
+  .sendwayo-modal-identity strong { font-size: 11px; font-weight: 900; overflow-wrap: anywhere; }
+  #sendwayo-module-list .sendwayo-module-table { width: 100%; min-width: 940px; border-collapse: collapse; font-size: 11px; }
+  #sendwayo-module-list .sendwayo-module-table th,
+  #sendwayo-module-list .sendwayo-module-table td { padding: 10px; text-align: left; vertical-align: top; border-bottom: 1px solid #e5eaf0; }
+  #sendwayo-module-list .sendwayo-module-table th { background: #edf2f8; font-weight: 900; }
+  #sendwayo-module-list .sendwayo-module-table tr:hover { background: #f5f9ff; }
+  #sendwayo-module-list .sendwayo-action-row { display: flex; gap: 5px; flex-wrap: wrap; min-width: 220px; }
+  #sendwayo-module-list .sendwayo-action-row button { border-radius: 999px; padding: 6px 9px; font-size: 10px; font-weight: 800; }
+  .sendwayo-account-suggestions { position: absolute; inset-inline: 0; top: 100%; z-index: 10000; max-height: 230px; overflow-y: auto; background: #fff; border: 1px solid #d1d5db; border-radius: 12px; box-shadow: 0 10px 28px #0002; }
+  .sendwayo-account-suggestion { display: block; width: 100%; text-align: left; padding: 10px 12px; border-bottom: 1px solid #edf0f4; color: #0f2440; background: #fff; }
+  .sendwayo-account-suggestion:hover { background: #eff6ff; }
+  /* El aviso estático de “3” no es una notificación real. */
+  #bell-count:empty { display: none !important; }
+  @media(max-width: 800px) {
+    #sendwayo-language-private-wrap { padding: 3px 5px; }
+    #sendwayo-active-identity-strip { font-size: 10px; }
+    #sendwayo-module-list .sendwayo-module-table { min-width: 860px; }
+  }
+</style>
+<script id="sendwayo-v7-final-access-and-module-fixes">
+(function () {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const norm = value => String(value == null ? '' : value).trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const txt = value => String(value == null ? '' : value).trim();
+  const safe = value => txt(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  const current = () => {
+    try { if (window.currentUser && (window.currentUser.id || window.currentUser.email)) return window.currentUser; } catch (_) {}
+    try { return (typeof currentUser !== 'undefined' && currentUser) ? currentUser : null; } catch (_) { return null; }
+  };
+  const currentRole = () => norm(current()?.role || current()?.rol || '').toUpperCase();
+  const accountRole = a => { const r=norm(a?.role || a?.rol || '').toUpperCase(); if (r.includes('ADMIN') || norm(a?.id)==='adminadmin') return 'ADMIN'; if (r.includes('AGENTE') || r.includes('AGENT')) return 'AGENTE'; if (r.includes('REMITENTE') || r.includes('SENDER')) return 'REMITENTE'; return r; };
+  const isAdmin = () => currentRole().includes('ADMIN') || norm(current()?.id) === 'adminadmin';
+  const isAgent = () => currentRole().includes('AGENTE');
+  const isRemitter = () => currentRole().includes('REMITENTE');
+  let successfulLoginThisPage = false;
+  const accounts = () => {
+    let a = null, ag = [], re = [];
+    try { a = typeof ADMIN !== 'undefined' ? ADMIN : window.ADMIN || null; } catch (_) { a = window.ADMIN || null; }
+    try { ag = typeof AGENTES !== 'undefined' && Array.isArray(AGENTES) ? AGENTES : (Array.isArray(window.AGENTES) ? window.AGENTES : []); } catch (_) {}
+    try { re = typeof REMITENTES !== 'undefined' && Array.isArray(REMITENTES) ? REMITENTES : (Array.isArray(window.REMITENTES) ? window.REMITENTES : []); } catch (_) {}
+    return [...(a ? [a] : []), ...ag, ...re].filter(Boolean);
+  };
+  const accountById = id => accounts().find(a => [a.id, a.idAnterior, a.codigo, a.codigo2, a.codigoAnterior, a.email, a.usuario].some(v => norm(v) === norm(id))) || null;
+  const accountByInput = raw => {
+    const q = norm(raw); if (!q) return null;
+    const all = accounts();
+    let match = all.find(a => [a.id, a.idAnterior, a.codigo, a.codigo2, a.codigoAnterior, a.email, a.usuario, a.celular, a.telefono].some(v => norm(v) === q));
+    if (match) return match;
+    match = all.find(a => norm(a.nombre || a.name) === q);
+    if (match) return match;
+    if (q.length >= 5) {
+      match = all.find(a => [a.id, a.codigo, a.email, a.usuario, a.celular, a.telefono, a.nombre, a.name].some(v => norm(v).length >= 5 && (q.includes(norm(v)) || norm(v).includes(q))));
+    }
+    return match || null;
+  };
+  const accountForUser = () => {
+    const u = current(); if (!u) return null;
+    return accountById(u.id) || accountByInput(u.email || u.usuario) || u;
+  };
+  const labelAccount = a => {
+    if (!a) return '';
+    const name = txt(a.nombre || a.name || a.email || a.id);
+    const id = txt(a.id);
+    const code = txt(a.codigo || a.codigo2 || '');
+    return `${name} — ID: ${id}${code ? ` — Código: ${code}` : ''}`;
+  };
+
+  // El HTML base declaraba currentUser=ADMIN; se invalida en cada visita y se exige inicio de sesión.
+  try { if (typeof currentUser !== 'undefined') currentUser = null; } catch (_) {}
+  try { window.currentUser = null; } catch (_) {}
+  document.body.classList.remove('sendwayo-authenticated', 'sendwayo-login-open');
+  // Keep sendwayo_last_activity_v5 across a page refresh; the existing 40-minute inactivity guard decides whether to re-authenticate.
+
+  function hideViewsAndModals() {
+    document.querySelectorAll('.view').forEach(el => el.classList.add('hidden'));
+    document.querySelectorAll('[id^="modal-"]').forEach(el => {
+      el.classList.add('hidden');
+      el.style.removeProperty('display');
+    });
+    const panel = $('notif-panel'); if (panel) panel.classList.add('hidden');
+  }
+  function showWelcome() {
+    successfulLoginThisPage = false;
+    try { if (typeof currentUser !== 'undefined') currentUser = null; } catch (_) {}
+    window.currentUser = null;
+    document.body.classList.remove('sendwayo-authenticated', 'sendwayo-login-open');
+    hideViewsAndModals();

@@ -1,0 +1,100 @@
+    ev.preventDefault();
+    ev.stopImmediatePropagation();
+    window.v162_abrirBen(match[1]);
+  }, true);
+
+  console.log('Sendwayo V9: beneficiario activo y agente 04 IDELETTE ISMORIN corregido.');
+})();
+</script>
+
+
+<!-- SENDWAYO V10 — ajustes puntuales sin alterar la portada ni las páginas que ya funcionan. -->
+<script>
+(function(){
+  'use strict';
+  const $=id=>document.getElementById(id);
+  const clean=v=>String(v==null?'':v).trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const esc=v=>String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  const storageGet=(k,d)=>{try{const x=JSON.parse(localStorage.getItem(k)||'null');return x==null?d:x;}catch(e){return d;}};
+  const storageSet=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+  const listAgents=()=>{try{return Array.isArray(AGENTES)?AGENTES:[];}catch(e){return window.AGENTES||[];}};
+  const listSenders=()=>{try{return Array.isArray(REMITENTES)?REMITENTES:[];}catch(e){return window.REMITENTES||[];}};
+  const officialAdmin=()=>{try{return ADMIN;}catch(e){return window.ADMIN||null;}};
+
+  // No sobrescribir identidades de administrador, agentes ni remitentes; Firebase es la fuente de perfiles.
+
+  // Paquetikos: show and validate the mobile number in the form; no recipient name is requested.
+  function revealPaquetikoCell(){
+    const tel=$('v162-pkt-tel');if(!tel)return;
+    tel.parentElement?.classList.remove('hidden');tel.classList.remove('hidden');tel.required=true;tel.disabled=false;tel.style.pointerEvents='auto';tel.placeholder='Número de celular para aplicar el paquetiko';
+    const lab=tel.parentElement?.querySelector('label');if(lab)lab.textContent='NÚMERO DE CELULAR';
+  }
+  window.addEventListener('load',revealPaquetikoCell);
+  document.addEventListener('click',()=>setTimeout(revealPaquetikoCell,30));
+  const prevAddModule=window.sendwayoAgregarModulo;
+  if(typeof prevAddModule==='function')window.sendwayoAgregarModulo=function(view){const r=prevAddModule.apply(this,arguments);if(view==='paquetikos')setTimeout(revealPaquetikoCell,30);return r;};
+  listAgents().forEach(a=>{if(a)a.balances=a.balances||{DOP:0,HTG:0};if(a.balances.DOP==null)a.balances.DOP=0;if(a.balances.HTG==null)a.balances.HTG=0;});
+
+  // Fix the beneficiary close button: remove inline styles as well as the hidden state.
+  window.v162_cerrarBen=function(){const m=$('modal-beneficiario-v162');if(!m)return;m.classList.add('hidden');['display','z-index','position','inset','pointer-events'].forEach(k=>m.style.removeProperty(k));};
+  const beneficiaryModal=$('modal-beneficiario-v162');
+  if(beneficiaryModal){const x=[...beneficiaryModal.querySelectorAll('button')].find(b=>/✕|×/.test(b.textContent||''));if(x){x.type='button';x.setAttribute('aria-label','Cerrar ventana de beneficiario');x.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();window.v162_cerrarBen();},true);}}
+  window.v162_abrirBen=function(origen){
+    window._v162_origen=origen||'beneficiarios';const m=$('modal-beneficiario-v162');if(!m){alert('No se encontró la ventanilla de beneficiarios.');return false;}
+    m.style.removeProperty('display');m.classList.remove('hidden');m.style.position='fixed';m.style.inset='0';m.style.zIndex='2147483600';m.style.pointerEvents='auto';
+    m.querySelectorAll('input,select,button').forEach(el=>{el.disabled=false;el.removeAttribute('disabled');el.style.pointerEvents='auto';});
+    if(origen==='beneficiarios'){['v162-ben-nom','v162-ben-tel','v162-ben-dir'].forEach(id=>{if($(id))$(id).value='';});if($('v162-ben-est'))$('v162-ben-est').value='Activo';}
+    setTimeout(()=>$('v162-ben-nom')?.focus(),0);return true;
+  };
+  window.abrirModalBeneficiario=window.v162_abrirBen;
+
+  // Retirement window X is aligned at the right of its own header and closes cleanly.
+  window.v162_cerrarRetiro=function(){const m=$('modal-retiro-v162');if(!m)return;m.classList.add('hidden');m.style.removeProperty('display');m.style.removeProperty('z-index');};
+  const retiroModal=$('modal-retiro-v162');if(retiroModal){const x=[...retiroModal.querySelectorAll('button')].find(b=>/✕|×/.test(b.textContent||''));if(x){x.type='button';x.classList.add('ml-3','shrink-0');x.setAttribute('aria-label','Cerrar ventanilla de retiro');x.onclick=window.v162_cerrarRetiro;}}
+
+  // Haiti local tariff page, fed by the same ranges used by the envio/retiro calculators.
+  const tariffKey='sendwayo_express_oficial_20261029_tarifas_ht_v10';
+  const defaults=[
+    {min:20,max:99,envio:0,retiro:6},{min:100,max:249,envio:0,retiro:12},{min:250,max:499,envio:0,retiro:15},
+    {min:500,max:999,envio:6,retiro:28},{min:1000,max:1999,envio:18,retiro:46},{min:2000,max:3999,envio:25,retiro:25},
+    {min:4000,max:7999,envio:35,retiro:130},{min:8000,max:11999,envio:54,retiro:248},{min:12000,max:19999,envio:63,retiro:342},
+    {min:20000,max:39999,envio:68,retiro:576},{min:40000,max:59999,envio:90,retiro:945},{min:60000,max:74999,envio:108,retiro:1260},
+    {min:75000,max:99999,envio:115,retiro:1440}
+  ];
+  let tariffRows=storageGet(tariffKey,null);if(!Array.isArray(tariffRows)||!tariffRows.length){tariffRows=defaults.map(r=>({...r}));storageSet(tariffKey,tariffRows);}
+  // La tarifa del retiro HTG 2,000–3,999 se fija en 25 HTG según la instrucción V7.
+  tariffRows=tariffRows.map(r=>Number(r.min)===2000&&Number(r.max)===3999?({...r,retiro:25}):r);storageSet(tariffKey,tariffRows);
+  tariffRows=tariffRows.map(r => Number(r.min)===2000 && Number(r.max)===3999 ? {...r,retiro:25} : r);storageSet(tariffKey,tariffRows);
+    const sortedRates=()=>tariffRows.slice().sort((a,b)=>Number(a.min)-Number(b.min));
+  const feeFor=(kind,amount)=>{const m=Number(amount)||0;const rows=sortedRates();if(m<20)return kind==='envio'?0:6;const r=rows.find(x=>m>=Number(x.min)&&m<=Number(x.max));if(r)return Math.max(0,Number(r[kind])||0);const last=rows[rows.length-1];return Math.max(0,Number(last?.[kind])||(kind==='envio'?115:1440));};
+  window.v162_getFeeEnvioHT=m=>feeFor('envio',m);window.v162_getFeeRetiroHT=m=>feeFor('retiro',m);
+  const fmt=n=>Number(n||0).toLocaleString('es-DO',{maximumFractionDigits:2});
+  const tariffMatrix=()=>[['Monto mínimo HTG','Monto máximo HTG','Comisión envío HTG','Comisión retiro HTG'],...sortedRates().map(r=>[r.min,r.max,r.envio,r.retiro])];
+  window.sendwayoTariffExport=function(format){
+    const matrix=tariffMatrix();
+    if(format==='csv'||format==='excel'){
+      const csv=matrix.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\r\n');
+      const payload=format==='excel'?'<table border="1">'+matrix.map((r,i)=>'<tr>'+r.map(v=>i===0?'<th>'+esc(v)+'</th>':'<td>'+esc(v)+'</td>').join('')+'</tr>').join('')+'</table>':csv;
+      const blob=new Blob([payload],{type:format==='excel'?'application/vnd.ms-excel;charset=utf-8':'text/csv;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=format==='excel'?'tarifas-haiti.xls':'tarifas-haiti.csv';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1200);return;
+    }
+    if(format==='pdf'){const w=window.open('','_blank');if(!w){alert('Permite las ventanas emergentes para guardar las tarifas en PDF.');return;}w.document.write('<meta charset="utf-8"><h2 style="text-align:center">Tarifas locales Haití (HTG)</h2><table border="1" cellpadding="8" cellspacing="0">'+matrix.map((r,i)=>'<tr>'+r.map(v=>i===0?'<th>'+esc(v)+'</th>':'<td>'+esc(v)+'</td>').join('')+'</tr>').join('')+'</table><script>window.onload=()=>window.print()<\\/script>');w.document.close();}
+  };
+  window.sendwayoTariffOpen=function(index=-1){
+    const row=index>=0?sortedRates()[index]:{min:'',max:'',envio:0,retiro:0};let m=$('sendwayo-tariff-modal');
+    if(!m){m=document.createElement('div');m.id='sendwayo-tariff-modal';m.className='fixed inset-0 z-[2147483601] bg-black/60 flex items-center justify-center p-4';document.body.appendChild(m);}
+    m.innerHTML=`<div class="bg-white rounded-2xl shadow-2xl p-5 w-full max-w-md space-y-3"><div class="flex items-center justify-between"><h3 class="font-bold">${index>=0?'Modificar':'Agregar'} rango de tarifa Haití</h3><button type="button" aria-label="Cerrar" onclick="document.getElementById('sendwayo-tariff-modal').classList.add('hidden')" class="text-xl">✕</button></div><label class="block text-xs font-bold">Monto mínimo (HTG)<input id="sw-rate-min" type="number" min="0" value="${esc(row.min)}" class="block w-full border rounded-xl p-3 mt-1"></label><label class="block text-xs font-bold">Monto máximo (HTG)<input id="sw-rate-max" type="number" min="0" value="${esc(row.max)}" class="block w-full border rounded-xl p-3 mt-1"></label><div class="grid grid-cols-2 gap-2"><label class="text-xs font-bold">Comisión envío<input id="sw-rate-envio" type="number" min="0" value="${esc(row.envio)}" class="block w-full border rounded-xl p-3 mt-1"></label><label class="text-xs font-bold">Comisión retiro<input id="sw-rate-retiro" type="number" min="0" value="${esc(row.retiro)}" class="block w-full border rounded-xl p-3 mt-1"></label></div><button type="button" class="w-full bg-green-600 text-white rounded-full p-3 font-bold" onclick="window.sendwayoTariffSave(${index})">Guardar tarifa</button></div>`;m.classList.remove('hidden');
+  };
+  window.sendwayoTariffSave=function(index=-1){const min=Number($('sw-rate-min')?.value),max=Number($('sw-rate-max')?.value),envio=Number($('sw-rate-envio')?.value),retiro=Number($('sw-rate-retiro')?.value);if(!Number.isFinite(min)||!Number.isFinite(max)||min<0||max<min||envio<0||retiro<0){alert('Verifique los montos y las comisiones de la tarifa.');return;}const row={min,max,envio,retiro};if(index>=0){const old=sortedRates()[index],ix=tariffRows.indexOf(old);if(ix>=0)tariffRows[ix]=row;}else tariffRows.push(row);tariffRows=sortedRates();storageSet(tariffKey,tariffRows);$('sendwayo-tariff-modal')?.classList.add('hidden');renderTariffPage();};
+  window.sendwayoTariffDelete=function(index){if(!confirm('¿Eliminar este rango de tarifa?'))return;const row=sortedRates()[index];tariffRows=tariffRows.filter(x=>x!==row);storageSet(tariffKey,tariffRows);renderTariffPage();};
+  function renderTariffPage(query=''){
+    let el=$('view-tarifas');if(!el){const parent=$('view-tablero')?.parentElement||document.querySelector('main')||document.body;el=document.createElement('div');el.id='view-tarifas';el.className='view hidden bg-white rounded-xl border shadow-sm';parent.appendChild(el);}
+    const rows=sortedRates().map((r,i)=>({...r,_i:i})).filter(r=>(`${r.min} ${r.max} ${r.envio} ${r.retiro}`).includes(String(query).trim()));
+    el.innerHTML=`<section class="p-3 md:p-4 space-y-3"><header class="bg-white border rounded-xl p-3"><h2 class="font-black text-sm mb-3">Tarifas locales Haití — HTG</h2><div class="flex flex-wrap items-center gap-2"><button type="button" onclick="window.sendwayoTariffOpen(-1)" class="bg-[#0f2440] text-white font-bold text-xs px-4 py-2.5 rounded-full">＋ Agregar nuevo</button><input type="search" value="${esc(query)}" oninput="renderTariffPage(this.value)" placeholder="Buscador…" class="border rounded-full px-4 py-2.5 text-xs w-52 max-w-full"><button type="button" onclick="window.sendwayoTariffExport('excel')" class="bg-green-600 text-white px-3 py-2 rounded-full text-xs">Excel</button><button type="button" onclick="window.sendwayoTariffExport('pdf')" class="bg-red-600 text-white px-3 py-2 rounded-full text-xs">PDF</button><button type="button" onclick="window.sendwayoTariffExport('csv')" class="bg-blue-700 text-white px-3 py-2 rounded-full text-xs">CSV</button></div><p class="text-xs text-gray-500 mt-2">Las tarifas guardadas aquí se utilizan en los cálculos locales de envíos y retiros. Montos y comisiones en gourdes haitianos (HTG).</p></header><div class="bg-white border rounded-xl overflow-x-auto"><table class="w-full text-xs min-w-[680px]"><thead class="bg-[#edf2f8]"><tr><th class="p-3">N°</th><th class="p-3">Desde (HTG)</th><th class="p-3">Hasta (HTG)</th><th class="p-3">Comisión envío (HTG)</th><th class="p-3">Comisión retiro (HTG)</th><th class="p-3">Acciones</th></tr></thead><tbody>${rows.map((r,i)=>`<tr class="border-t"><td class="p-3">${String(i+1).padStart(2,'0')}</td><td class="p-3">${fmt(r.min)}</td><td class="p-3">${fmt(r.max)}</td><td class="p-3">${fmt(r.envio)}</td><td class="p-3">${fmt(r.retiro)}</td><td class="p-3"><div class="flex gap-1"><button type="button" onclick="window.sendwayoTariffOpen(${r._i})" class="border rounded-full px-3 py-1">Modificar</button><button type="button" onclick="window.sendwayoTariffDelete(${r._i})" class="border border-red-300 text-red-700 rounded-full px-3 py-1">Borrar</button></div></td></tr>`).join('')||'<tr><td colspan="6" class="p-6 text-center">No hay rangos para esta búsqueda.</td></tr>'}</tbody></table></div></section>`;
+  }
+  window.renderTariffPage=renderTariffPage;
+
+  // Dedicated commissions / wallet page with Add, search, exports, numbering, and records.
+  const fmtMoney=n=>Number(n||0).toLocaleString('es-DO',{maximumFractionDigits:2});
+  function renderCommissionPage(query=''){
+    let el=$('view-comisiones');if(!el){const parent=$('view-tablero')?.parentElement||document.querySelector('main')||document.body;el=document.createElement('div');el.id='view-comisiones';el.className='view hidden bg-white rounded-xl border shadow-sm';parent.appendChild(el);}
+    const me=window.currentUser||(()=>{try{return currentUser}catch(e){return null}})();const uid=me?.id||'ADMINADMIN';

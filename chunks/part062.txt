@@ -1,0 +1,100 @@
+  const renderRetirosAnterior=window.renderModuloSeparado || renderAnterior;
+  window.renderModuloSeparado=function(view){
+    if(view==='retiros'){dibujarRetiros();return;}
+    if(typeof renderRetirosAnterior==='function') return renderRetirosAnterior(view);
+  };
+  window.showView=function(view){
+    if(view!=='retiros'){
+      if(typeof showAnterior==='function') return showAnterior(view);
+      return;
+    }
+    const cont=asegurarVista();
+    document.querySelectorAll('.view').forEach(v=>v.classList.add('hidden'));
+    cont.classList.remove('hidden');
+    dibujarRetiros();
+    cont.classList.remove('hidden');
+    if(typeof cont.scrollIntoView==='function') cont.scrollIntoView({block:'start',behavior:'auto'});
+  };
+  // Reforzar el enlace lateral: el propio botón y cualquier acceso que lo invoque muestran esta página.
+  document.querySelectorAll('button[onclick*="retiros"]').forEach(btn=>{
+    if((btn.getAttribute('onclick')||'').includes('showView')){
+      btn.addEventListener('click',()=>setTimeout(()=>window.showView('retiros'),0));
+    }
+  });
+  // Delegación por si el menú lateral se vuelve a dibujar dinámicamente.
+  document.addEventListener('click',function(ev){
+    const btn=ev.target && ev.target.closest ? ev.target.closest('button[onclick*="showView(\'retiros\')"],button[aria-label="Abrir página de retiros"]') : null;
+    if(btn) setTimeout(()=>window.showView('retiros'),0);
+  });
+})();
+</script>
+
+<script>
+/* SENDWAYO EXPRESS V5 - Correcciones solicitadas del 26-10-2026.
+   Se limita a los módulos, permisos, saldos de prueba, tarifas, cuentas y accesos enumerados. */
+(function(){
+ 'use strict';
+ const $=id=>document.getElementById(id);
+ const text=v=>String(v==null?'':v);
+ const esc=v=>text(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+ const readJSON=(key,def)=>{try{const v=JSON.parse(localStorage.getItem(key)||'null');return v==null?def:v}catch(e){return def}};
+ const writeJSON=(key,value)=>{try{localStorage.setItem(key,JSON.stringify(value))}catch(e){}};
+ const admin=()=>{try{return typeof ADMIN!=='undefined'?ADMIN:null}catch(e){return null}};
+ const agents=()=>{try{return typeof AGENTES!=='undefined'?AGENTES:[]}catch(e){return []}};
+ const senders=()=>{try{return typeof REMITENTES!=='undefined'?REMITENTES:[]}catch(e){return []}};
+ const txs=()=>{try{return typeof TRANSACCIONES!=='undefined'?TRANSACCIONES:(window.TRANSACCIONES||[])}catch(e){return window.TRANSACCIONES||[]}};
+ const user=()=>{try{return window.currentUser||(typeof currentUser!=='undefined'&&currentUser?currentUser:null)}catch(e){return window.currentUser||null}};
+ const isAdmin=()=>{const u=user();return !!u&&(String(u.role||'').toUpperCase().includes('ADMIN')||['ADMINADMIN','ADMIN-ADM'].includes(String(u.id||'').toUpperCase()))};
+ const roleOf=a=>String(a&&a.role||'').toUpperCase();
+ const norm=s=>text(s).toLocaleLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+ const formatMoney=(n)=>Number(n||0).toLocaleString('es-DO',{minimumFractionDigits:2,maximumFractionDigits:2});
+ const acctName=a=>text(a&&(a.nombre||a.name||a.email||a.id));
+ const allAccounts=()=>[...(admin()?[admin()]:[]),...agents(),...senders()];
+ const balanceObject=a=>{if(!a)return null;if(!a.balances)a.balances={DOP:0,HTG:0};if(a.balances.DOP==null)a.balances.DOP=0;if(a.balances.HTG==null)a.balances.HTG=0;return a.balances};
+ const commissionObject=a=>{if(!a)return null;if(!a.commissions)a.commissions=a.comisiones||{DOP:0,HTG:0};if(!a.comisiones)a.comisiones=a.commissions;if(a.commissions.DOP==null)a.commissions.DOP=0;if(a.commissions.HTG==null)a.commissions.HTG=0;a.comisiones.DOP=a.commissions.DOP;a.comisiones.HTG=a.commissions.HTG;return a.commissions};
+ const accountById=id=>allAccounts().find(a=>String(a.id)===String(id)||String(a.idAnterior||'')===String(id)||String(a.codigo||'')===String(id)||String(a.codigoAnterior||'')===String(id))||null;
+ const accountByInput=raw=>{
+   const q=norm(raw);if(!q)return null;
+   let a=allAccounts().find(x=>[x.id,x.idAnterior,x.codigo,x.codigoAnterior,x.codigo2,x.email,x.usuario,x.celular,x.telefono,x.nombre,x.name].some(y=>norm(y)===q));
+   if(a)return a;
+   a=allAccounts().find(x=>[x.id,x.codigo,x.email,x.usuario,x.celular,x.telefono,x.nombre,x.name].some(y=>norm(y)&& (q.includes(norm(y))||norm(y).includes(q))));
+   return a||null;
+ };
+ const currentAccount=()=>{const u=user();return u?accountById(u.id)||accountByInput(u.email)||null:null};
+ const savedAccountState=readJSON('sendwayo_express_oficial_20261029_account_values_v5',null)||null;window.__sendwayoHadSavedAccountState=Array.isArray(savedAccountState)&&savedAccountState.length>0;
+ function saveAccountValues(){const data=allAccounts().map(a=>({id:a.id,balances:balanceObject(a),commissions:commissionObject(a),password:a.password}));writeJSON('sendwayo_express_oficial_20261029_account_values_v5',data);writeJSON('sendwayo_express_oficial_20261029_accounts_v5',data);}
+ const currencyFor=t=>{if(!t)return'DOP';const r=norm(text(t.ruta)+' '+text(t.rutaExacta));const fromRD=/^(?:rd\b|republica\s+dominicana\b)/.test(r);const toHaiti=/\b(?:ht|haiti|hati)\b/.test(r);if(fromRD&&toHaiti)return'DOP';if(/^(?:ht\b|haiti\b|hati\b)/.test(r)||/\b(?:naca\s*a\s*naca|montcash\s*a\s*montcash|natcash\s*a\s*natcash|moncash\s*a\s*moncash)\b/.test(r))return'HTG';if(/\b(?:htg|gourdes?|gdes)\b/i.test(text(t.moneda)+' '+text(t.monto)))return'HTG';return'DOP';};
+ const currencyLabel=cur=>cur==='HTG'?'Gourdes haitianos (HTG)':'Pesos dominicanos (DOP)';
+ const getCurrentView=()=>[...document.querySelectorAll('.view')].find(v=>!v.classList.contains('hidden'))?.id?.replace('view-','')||'tablero';
+ const updateViews=()=>{try{if(typeof window.renderPrincipal==='function')window.renderPrincipal()}catch(e){};try{const v=getCurrentView();if(v==='retiros'&&window.renderModuloSeparado)window.renderModuloSeparado('retiros');else if(window.renderModuloSeparado)window.renderModuloSeparado(v)}catch(e){}};
+ const persistTx=()=>writeJSON('sendwayo_express_oficial_20261029_transacciones',txs());
+ const refreshTx=()=>{persistTx();updateViews()};
+
+ // Los perfiles, códigos, balances y comisiones se cargan exclusivamente desde Firebase después de autenticar.
+ // No se importan ni reescriben cuentas del navegador.
+
+ // Datos de bancos oficiales exactamente indicados.
+ const SENDWAYO_OFFICIAL_BANKS = [];
+ // Siempre usar los tres datos oficiales exactos; conservar solo cuentas adicionales creadas por el administrador.
+ const bankStorage=readJSON('sendwayo_express_oficial_20261029_bank_accounts_v5',[]);
+ const customBanks=Array.isArray(bankStorage)?bankStorage.filter(b=>String(b.id||'').startsWith('BANK-')&&!SENDWAYO_OFFICIAL_BANKS.some(o=>String(o.cuenta)===String(b.cuenta))):[];
+ window.SENDWAYO_BANKS=[...SENDWAYO_OFFICIAL_BANKS,...customBanks];
+ writeJSON('sendwayo_express_oficial_20261029_bank_accounts_v5',window.SENDWAYO_BANKS);
+ const bankOptions=()=>window.SENDWAYO_BANKS.map(b=>`<option value="${esc(b.id)}">${esc(b.banco)} — ${esc(b.cuenta)} — ${esc(b.titular)} — Pasaporte ${esc(b.documento)}</option>`).join('');
+ function replaceBankOptions(sel){if(!sel)return;sel.innerHTML=bankOptions();}
+ replaceBankOptions($('v162-dep-cuenta'));replaceBankOptions($('deposito-cuenta'));
+ const navButtons=[...document.querySelectorAll('button,a')];
+ navButtons.forEach(b=>{const t=norm(b.textContent);if(t.includes('depositos - separado')||t.includes('depositos')){const label=b.querySelector('span:last-child')||b;b.setAttribute('aria-label','Cuenta bancaria y depósitos');if(!b.children.length)b.textContent='🏦 Cuenta bancaria y depósitos';else {const leaf=[...b.childNodes].filter(n=>n.nodeType===3);if(leaf.length)leaf[leaf.length-1].textContent=' Cuenta bancaria y depósitos';}}if(t.includes('recepcion envio y distribucion')){b.setAttribute('aria-label','Paquetes (Recepción, envío y distribución)');const leaf=[...b.childNodes].filter(n=>n.nodeType===3);if(leaf.length)leaf[leaf.length-1].textContent=' Paquetes (Recepción, envío y distribución)';}});
+
+ // Add missing named views and links only where the existing app did not provide them.
+ function ensureView(name){let el=$('view-'+name);if(!el){const parent=$('view-retiros')?.parentElement||$('view-tablero')?.parentElement||document.querySelector('main')||document.body;el=document.createElement('div');el.id='view-'+name;el.className='view hidden bg-white rounded-xl border shadow-sm';parent.appendChild(el);}return el;}
+ ['bienvenida','creditos','referencia'].forEach(ensureView);
+ (function addReferenceNav(){if(document.querySelector('[data-sendwayo-nav="referencia"]'))return;const menuButton=document.querySelector('button[onclick*="showView(\'facturas\')"]');if(!menuButton)return;const b=document.createElement('button');b.type='button';b.dataset.sendwayoNav='referencia';b.className=menuButton.className;b.textContent='🧾 Pago de referencia';b.onclick=()=>window.showView('referencia');menuButton.insertAdjacentElement('afterend',b);})();
+
+ // 2) Todas las vistas nuevas o administrativas usan controles reales: agregar, búsqueda, exportaciones, numeración y acciones.
+ const extraStoreKey=view=>'sendwayo_express_oficial_20261029_'+view+'_v5';
+ const extraRows=view=>readJSON(extraStoreKey(view),[]);
+ const saveExtra=(view,rows)=>writeJSON(extraStoreKey(view),rows);
+ const mapTypes={depositos:['Depósito','Deposito','Depósitos','Depositos'],creditos:['Creditos','Créditos','Crédito','Credito'],ajustes:['Ajuste','Ajustes'],envios:['Envío','Envio','Envíos','Envios'],retiros:['Retiro','Retiros'],recargas:['Recargas','Recarga'],paquetikos:['Paquetikos','Paquetiko','Paquetico','Paqueticos'],facturas:['Facturas','Factura','Servicios','Servicio','Pago de servicios','Pago de servicio'],recepcion:['Paquetes'],comisiones:['Comisiones','Comisión','Retiro de comisión','Pago y retiro de comisiones','Pago de comisión']};
+ function moduleRows(view){if(mapTypes[view])return txs().filter(t=>mapTypes[view].includes(t.tipo)).slice().sort((a,b)=>(Number(b.timestamp)||0)-(Number(a.timestamp)||0));if(['conciliacion','referencia','reportes','informes'].includes(view))return extraRows(view);if(view==='bienvenida')return readJSON('sendwayo_express_oficial_20261029_registros_pendientes_v5',[]);if(view==='cuentas')return window.SENDWAYO_BANKS;if(view==='secretas')return isAdmin()?(window.USUARIOS_LOGIN||[]):[];if(view==='mibanco'){const a=currentAccount()||admin();return a?[{id:a.id,fecha:'',tipo:'Mi banco',ruta:a.codigo||'',rutaExacta:a.nombre||a.name||'',monto:'DOP '+formatMoney(balanceObject(a)?.DOP)+' / HTG '+formatMoney(balanceObject(a)?.HTG),estado:'Activo',beneficiario:acctName(a)}]:[];}if(view==='perfil'){const a=currentAccount()||admin();return a?[{id:a.id,fecha:'',tipo:'Perfil',ruta:a.codigo,rutaExacta:acctName(a),monto:'DOP '+formatMoney(balanceObject(a)?.DOP)+' / HTG '+formatMoney(balanceObject(a)?.HTG),estado:'Activo',beneficiario:a.email||''}]:[];}return txs().filter(t=>t.tipo&&text(t.tipo).toLowerCase().includes(view.replace(/s$/,'').toLowerCase())).slice().sort((a,b)=>(Number(b.timestamp)||0)-(Number(a.timestamp)||0));}
+ function exportTable(view,format){const table=$('tabla-sendwayo-'+view)||$('tabla-'+view+'-body')?.closest('table')||document.querySelector('#view-'+view+' table');if(!table){alert('No hay tabla que exportar en esta página.');return;}const name='Sendwayo-'+view+'-'+new Date().toISOString().slice(0,10);if(format==='pdf'){const w=window.open('','_blank');if(!w){alert('Permite las ventanas emergentes para imprimir/guardar PDF.');return;}w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>'+esc(name)+'</title><style>body{font-family:Arial;padding:16px}table{border-collapse:collapse;width:100%;font-size:11px}td,th{border:1px solid #aaa;padding:5px;text-align:left}</style></head><body><h2>'+esc(name)+'</h2>'+table.outerHTML+'<script>window.onload=()=>window.print()<\/script></body></html>');w.document.close();return;}const rows=[...table.querySelectorAll('tr')].map(tr=>[...tr.querySelectorAll('th,td')].map(td=>'"'+td.innerText.replace(/\s+/g,' ').trim().replace(/"/g,'""')+'"').join(','));const blob=new Blob(['\ufeff'+rows.join('\r\n')],{type:format==='excel'?'application/vnd.ms-excel;charset=utf-8':'text/csv;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name+(format==='excel'?'.xls':'.csv');document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}

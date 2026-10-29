@@ -1,0 +1,100 @@
+    const all=[...listAgents(),...listSenders(),officialAdmin()].filter(Boolean);const a=all.find(x=>String(x.id)===String(uid))||officialAdmin();const com=a?.commissions||a?.comisiones||{DOP:0,HTG:0};
+    const isAdminView=String(me?.role||'').toUpperCase().includes('ADMIN');const hist=(window.TRANSACCIONES||[]).filter(t=>((/comisi|wallet|recargar balance/i.test(String(t.tipo||'')+' '+String(t.ruta||'')))||t.comisionAplicada||t.saldoAcreditadoCuentaId===String(uid)||t.pagoComisionDestinoId===String(uid))&&(isAdminView||String(t.creadorId||'')===String(uid)||String(t.remitenteId||'')===String(uid)||String(t.cuentaOrigenId||'')===String(uid)||String(t.destinoId||'')===String(uid)||String(t.depositanteId||'')===String(uid)||String(t.comisionAgenteId||'')===String(uid)||String(t.saldoAcreditadoCuentaId||'')===String(uid)||String(t.pagoComisionDestinoId||'')===String(uid))).filter(t=>(`${t.id} ${t.tipo} ${t.monto} ${t.estado} ${t.beneficiario||''}`).toLowerCase().includes(String(query).toLowerCase()));
+    el.innerHTML=`<section class="p-3 md:p-4 space-y-3"><header class="bg-white border rounded-xl p-3"><h2 class="font-black text-sm mb-3">Pago y retiro de comisiones — Wallet</h2><div class="grid grid-cols-2 gap-3 mb-3"><div class="rounded-xl border p-3"><div class="text-xs text-gray-500">Comisión disponible DOP</div><strong>${fmtMoney(com.DOP||0)} RD$</strong></div><div class="rounded-xl border p-3"><div class="text-xs text-gray-500">Comisión disponible HTG</div><strong>${fmtMoney(com.HTG||0)} HTG</strong></div></div><div class="flex flex-nowrap items-center gap-1 overflow-x-auto whitespace-nowrap"><button type="button" onclick="window.sendwayoAgregarModulo('comisiones')" class="shrink-0 bg-[#0f2440] text-white font-bold text-[10px] px-2 py-2 rounded-full">＋ Agregar nuevo</button><input type="search" value="${esc(query)}" oninput="renderCommissionPage(this.value)" placeholder="Buscador…" class="shrink-0 border rounded-full px-2 py-2 text-[10px] w-24"><button type="button" onclick="window.sendwayoCommissionExport('excel')" class="shrink-0 bg-green-600 text-white px-2 py-2 rounded-full text-[10px]">Excel</button><button type="button" onclick="window.sendwayoCommissionExport('pdf')" class="shrink-0 bg-red-600 text-white px-2 py-2 rounded-full text-[10px]">PDF</button><button type="button" onclick="window.sendwayoCommissionExport('csv')" class="shrink-0 bg-blue-700 text-white px-2 py-2 rounded-full text-[10px]">CSV</button></div></header><div class="bg-white border rounded-xl overflow-x-auto"><table class="w-full text-xs min-w-[700px]"><thead class="bg-[#edf2f8]"><tr><th class="p-3">N°</th><th class="p-3">ID / Fecha</th><th class="p-3">Detalle</th><th class="p-3">Monto</th><th class="p-3">Estado</th><th class="p-3">Acciones</th></tr></thead><tbody>${hist.map((t,i)=>`<tr class="border-t"><td class="p-3">${String(i+1).padStart(2,'0')}</td><td class="p-3">${esc(t.id)}<br>${esc(t.fecha||'')}</td><td class="p-3">${esc(t.tipo)} — ${esc(t.ruta||'')}</td><td class="p-3">${esc(t.monto||'')}</td><td class="p-3">${esc(t.estado||'')}</td><td class="p-3"><button type="button" onclick="alert('Registro: ${esc(t.id)}')" class="border rounded-full px-3 py-1">Ver</button></td></tr>`).join('')||'<tr><td colspan="6" class="p-6 text-center">No hay movimientos de comisiones o Wallet.</td></tr>'}</tbody></table></div></section>`;
+  }
+  window.renderCommissionPage=renderCommissionPage;
+  window.sendwayoCommissionExport=function(format){
+    const rows=[['ID / Fecha','Detalle','Monto','Estado'],...(window.TRANSACCIONES||[]).filter(t=>/comisi|wallet|recargar balance/i.test(String(t.tipo||'')+' '+String(t.ruta||''))).map(t=>[t.id,t.tipo+' '+(t.ruta||''),t.monto,t.estado])];
+    if(format==='pdf'){const w=window.open('','_blank');if(!w){alert('Permite las ventanas emergentes para imprimir este informe.');return;}w.document.write('<meta charset="utf-8"><h2>Movimientos de comisiones / Wallet</h2><table border="1">'+rows.map((r,i)=>'<tr>'+r.map(v=>i===0?'<th>'+esc(v)+'</th>':'<td>'+esc(v)+'</td>').join('')+'</tr>').join('')+'</table><script>window.onload=()=>window.print()<\\/script>');w.document.close();return;}
+    const csv=rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');const payload=format==='excel'?'<table>'+rows.map(r=>'<tr>'+r.map(v=>'<td>'+esc(v)+'</td>').join('')+'</tr>').join('')+'</table>':csv;const blob=new Blob([payload],{type:format==='excel'?'application/vnd.ms-excel':'text/csv'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=format==='excel'?'comisiones-wallet.xls':'comisiones-wallet.csv';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1200);
+  };
+
+  // Explicitly align these four controls in the sidebar without moving the already-good modules.
+  const sidebar=$('sendwayo-main-sidebar');
+  if(sidebar){const buttons=[...sidebar.querySelectorAll('button')];const find=t=>buttons.find(b=>clean(b.textContent).includes(clean(t)));const transfer=find('Pago de transferencia'),secret=find('Informaciones secretas'),profile=find('Mi perfil'),logout=find('Cerrar sesión');if(transfer&&secret&&profile&&logout){const parent=secret.parentElement;[transfer,secret,profile,logout].forEach(n=>n.remove());[transfer,secret,profile,logout].forEach(n=>parent.appendChild(n));transfer.onclick=()=>window.showView('transferencia');profile.onclick=()=>window.showView('perfil');secret.onclick=()=>window.showView('secretas');logout.onclick=()=>window.cerrarSesion();}}
+  window.cerrarSesion=function(){if(!confirm('¿Desea cerrar sesión?'))return;document.querySelectorAll('.view').forEach(v=>v.classList.add('hidden'));$('login-screen')?.classList.remove('hidden');$('welcome-landing')?.classList.add('hidden');if($('login-usuario'))$('login-usuario').value='';if($('login-password'))$('login-password').value='';if($('login-error'))$('login-error').classList.add('hidden');try{currentUser=null;}catch(e){}window.currentUser=null;};
+
+  // Route tariffs and Wallet to their dedicated pages, retaining all existing module routes.
+  const previousShowView=window.showView;
+  window.showView=function(view){
+    if(view==='tarifas'){
+      document.querySelectorAll('.view').forEach(v=>v.classList.add('hidden'));let el=$('view-tarifas');if(!el){const p=$('view-tablero')?.parentElement||document.querySelector('main')||document.body;el=document.createElement('div');el.id='view-tarifas';el.className='view hidden bg-white rounded-xl border shadow-sm';p.appendChild(el);}el.classList.remove('hidden');renderTariffPage();if(innerWidth<=1024)$('sendwayo-main-sidebar')?.classList.remove('sendwayo-menu-open');return;
+    }
+    if(view==='comisiones'){
+      document.querySelectorAll('.view').forEach(v=>v.classList.add('hidden'));let el=$('view-comisiones');if(!el){const p=$('view-tablero')?.parentElement||document.querySelector('main')||document.body;el=document.createElement('div');el.id='view-comisiones';el.className='view hidden bg-white rounded-xl border shadow-sm';p.appendChild(el);}el.classList.remove('hidden');renderCommissionPage();if(innerWidth<=1024)$('sendwayo-main-sidebar')?.classList.remove('sendwayo-menu-open');return;
+    }
+    if(typeof previousShowView==='function')return previousShowView(view);
+  };
+
+  window.addEventListener('DOMContentLoaded',()=>{
+    revealPaquetikoCell();
+    const modal=$('modal-beneficiario-v162');if(modal){const x=[...modal.querySelectorAll('button')].find(b=>/✕|×/.test(b.textContent||''));if(x)x.addEventListener('click',()=>window.v162_cerrarBen(),true);}
+    const retiro=$('modal-retiro-v162');if(retiro){const x=[...retiro.querySelectorAll('button')].find(b=>/✕|×/.test(b.textContent||''));if(x)x.onclick=window.v162_cerrarRetiro;}
+  });
+  console.log('Sendwayo V10: celular de paquetikos, códigos canónicos, balance compartido de agentes, tarifas HT, cuentas/depósitos, Wallet y cierre de ventanillas.');
+})();
+</script>
+
+
+<script>
+/* SENDWAYO V11 — sincronización final de datos y controles puntuales */
+(function(){
+  'use strict';
+  const $=id=>document.getElementById(id);
+  const norm=s=>String(s==null?'':s).trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  const ag=()=>{try{return typeof AGENTES!=='undefined'?AGENTES:[]}catch(e){return window.AGENTES||[]}};
+  const rem=()=>{try{return typeof REMITENTES!=='undefined'?REMITENTES:[]}catch(e){return window.REMITENTES||[]}};
+  const admin=()=>{try{return typeof ADMIN!=='undefined'?ADMIN:window.ADMIN||null}catch(e){return window.ADMIN||null}};
+  const nameCode=a=>{const p=String(a.nombre||a.name||'').trim().split(/\s+/).filter(Boolean);return 'REM-'+(p[0]||'REM').slice(0,3).toUpperCase()+(p.length>1?p[p.length-1]:p[0]||'USR').slice(0,3).toUpperCase()};
+
+  // Firebase provides the canonical account records and IDs.
+
+  // Retry the package cell reveal after opening the form, as older renderers sometimes hide its parent.
+  function revealCell(){const tel=$('v162-pkt-tel');if(!tel)return;let n=tel;for(let i=0;i<3&&n;i++,n=n.parentElement){n.classList.remove('hidden');n.style.removeProperty('display');}tel.disabled=false;tel.required=true;tel.style.pointerEvents='auto';tel.setAttribute('aria-label','Número de celular para aplicar el paquetiko');tel.placeholder='Número de celular para aplicar el paquetiko';}
+  const oldAdd=window.sendwayoAgregarModulo;
+  if(typeof oldAdd==='function')window.sendwayoAgregarModulo=function(view){
+    const u=window.currentUser||(()=>{try{return currentUser}catch(e){return null}})();
+    
+    const result=oldAdd.apply(this,arguments);if(view==='paquetikos')setTimeout(revealCell,40);return result;
+  };
+  document.addEventListener('click',()=>setTimeout(revealCell,40));
+
+  // Ensure the sidebar order is installed only after the sidebar has its final DOM ID.
+  function fixSidebarOrder(){const side=$('sendwayo-main-sidebar');if(!side)return;const buttons=[...side.querySelectorAll('button')];const find=t=>buttons.find(b=>norm(b.textContent).includes(norm(t)));const transfer=find('pago de transferencia'),secret=find('informaciones secretas'),profile=find('mi perfil'),logout=find('cerrar sesión');if(transfer&&secret&&profile&&logout){const parent=secret.parentElement;[transfer,secret,profile,logout].forEach(b=>b.remove());[transfer,secret,profile,logout].forEach(b=>parent.appendChild(b));transfer.onclick=()=>window.showView('transferencia');secret.onclick=()=>window.showView('secretas');profile.onclick=()=>window.showView('perfil');logout.onclick=()=>window.cerrarSesion();}}
+
+  // Apply canonical records to the already-drawn dashboard and refresh the selected table.
+  const refreshCanonicalViews=()=>{
+    try{if(typeof window.renderPrincipal==='function')window.renderPrincipal();}catch(e){}
+    try{const v=[...document.querySelectorAll('.view')].find(x=>!x.classList.contains('hidden'))?.id?.replace('view-','');if(v==='retiros'&&window.renderModuloSeparado)window.renderModuloSeparado('retiros');else if(v&&v!=='tablero'&&['agentes','remitentes','cuentas','depositos','secretas','tarifas','comisiones','transferencia','bono','creditos','ajustes','bienvenida','referencia','conciliacion','mibanco','perfil'].includes(v)&&typeof window.showView==='function')window.showView(v);}catch(e){}
+    fixSidebarOrder();revealCell();
+  };
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(refreshCanonicalViews,0));else setTimeout(refreshCanonicalViews,0);
+  window.addEventListener('load',()=>setTimeout(refreshCanonicalViews,0));
+})();
+</script>
+
+
+
+
+<!-- CORRECCIÓN PUNTUAL: acceso obligatorio, identidad por cuenta, listas separadas y controles visibles. -->
+<style id="sendwayo-v7-final-access-style">
+  /* Sin autenticación solo se muestra bienvenida o el formulario de acceso. */
+  body:not(.sendwayo-authenticated) > :not(#welcome-landing):not(#login-screen):not(script):not(style) {
+    display: none !important; visibility: hidden !important;
+  }
+  body:not(.sendwayo-authenticated) #welcome-landing {
+    display: block !important; visibility: visible !important;
+  }
+  body:not(.sendwayo-authenticated):not(.sendwayo-login-open) #login-screen {
+    display: none !important; visibility: hidden !important;
+  }
+  body.sendwayo-login-open #welcome-landing { display: none !important; visibility: hidden !important; }
+  body.sendwayo-login-open #login-screen { display: flex !important; visibility: visible !important; }
+  body.sendwayo-authenticated #welcome-landing,
+  body.sendwayo-authenticated #login-screen { display: none !important; visibility: hidden !important; }
+  #sendwayo-language-public-wrap, #sendwayo-language-private-wrap {
+    display: inline-flex; align-items: center; gap: 5px; flex: 0 0 auto;
+    padding: 4px 7px; border-radius: 999px; background: #fff; color: #0f2440;
+    border: 1px solid #d1d5db; font-size: 10px; font-weight: 800;
+  }

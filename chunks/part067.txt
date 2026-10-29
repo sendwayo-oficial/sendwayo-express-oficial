@@ -1,0 +1,100 @@
+    [['v162-cred-rem','Crédito'],['v162-aju-nom','Ajuste'],['v162-com-rem','Comisión']].forEach(([id,label])=>{const old=$(id);if(!old||old.tagName==='SELECT')return;const s=document.createElement('select');s.id=id;s.className=old.className||'w-full border rounded-full px-4 py-2.5 text-xs';s.innerHTML=accountOptions('',true);if(old.parentElement)old.parentElement.replaceChild(s,old);});
+    const c=$('v162-cred-rem');if(c&&c.tagName==='SELECT'&&!c.value)c.value=admin()?.id||'';const a=$('v162-aju-nom');if(a&&a.tagName==='SELECT'&&!a.value)a.value=admin()?.id||'';const co=$('v162-com-rem');if(co&&co.tagName==='SELECT'&&!co.value)co.value=admin()?.id||'';
+  }
+  const oldOpenAdjust=window.v162_abrirAjustar;
+  window.v162_abrirAjustar=function(nom,id,rol){if(!isAdmin()){alert('Solo el administrador puede ajustar balances y comisiones.');return;}setupAdminMoneyForms();upgradeTargetSelectors();const target=accountById(id)||accountByInput(nom);const f=$('v162-aju-nom');if(f&&target)f.value=target.id;const m=$('modal-ajustar-v162');if(m)m.classList.remove('hidden');};
+  // Make action table account statuses available to the admin; all other fields remain unchanged.
+  const oldShowCurrent=window.showView;
+  window.showView=function(view){
+    if(['transferencia','bono'].includes(view))ensureView(view);
+    if(typeof oldShowCurrent==='function')oldShowCurrent(view);
+    if(['depositos','cuentas','bienvenida','creditos','ajustes','referencia','conciliacion','reportes','informes','mibanco','perfil','secretas','remitentes','agentes','transferencia','bono'].includes(view))renderCustom(view);
+    setTimeout(()=>{hookVisibleExports();setupAdminMoneyForms();upgradeTargetSelectors();},0);
+    if(innerWidth<=1024){$('sendwayo-main-sidebar')?.classList.remove('sendwayo-menu-open');$('sendwayo-menu-shade')?.classList.remove('open');}
+  };
+  window.addEventListener('load',()=>{try{installWelcomeExtras();}catch(e){};try{upgradeTargetSelectors();}catch(e){};});
+  // Remove the public credential hint from the login screen; inputs never contain default credentials.
+  const hint=$('login-screen')?.querySelector('.text-gray-500');if(hint&&/ADMIN:/.test(hint.textContent))hint.textContent='Usa tu correo, ID o código y tu contraseña.';
+  console.log('Sendwayo V7: agente 04/remitente 11, altas de cuentas, transferencia, bono, perfil, Mi banco, reportes y bienvenida actualizados.');
+
+ // Firebase Authentication is the only credential source; no hard-coded user accounts.
+ // La cuenta administrativa solo admite la contraseña administrativa especificada.
+ const loginBeforeV8=window.intentarLogin;
+ window.intentarLogin=function(){const raw=$('login-usuario')?.value.trim()||'',pass=$('login-password')?.value||'',rec=(window.USUARIOS_LOGIN||[]).find(x=>[x.usuario,x.email,x.id,x.codigo,...(x.aliases||[])].some(v=>norm(v)===norm(raw))),err=$('login-error');if(rec&&rec.id==='ADMINADMIN'&&pass!==''){if(err){err.textContent='Contraseña incorrecta.';err.classList.remove('hidden')}else alert('Contraseña incorrecta.');return;}if(typeof loginBeforeV8==='function')loginBeforeV8();};
+ console.log('Sendwayo V8: administrador y agente 04 normalizados; remitente 11 conservado.');
+
+ console.log('Sendwayo V7 patch loaded: requested module corrections and validations.');
+})();
+
+</script>
+<script>
+/* V9 - CORRECCIÓN PUNTUAL: AGENTE 04 Y VENTANILLA DE BENEFICIARIO */
+(function(){
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const clean = v => String(v == null ? '' : v).trim().toLowerCase();
+
+  // Identidades y credenciales vienen del perfil autenticado de Firebase; no fijar una cuenta específica en el HTML.
+
+  // Abrir modal sobre cualquier otro panel, activando controles para ratón y pantallas táctiles.
+  window.v162_abrirBen = function(origen) {
+    window._v162_origen = origen || 'beneficiarios';
+    const modal = $('modal-beneficiario-v162');
+    if (!modal) { alert('No se encontró la ventanilla para agregar beneficiarios.'); return false; }
+    modal.classList.remove('hidden');
+    modal.style.setProperty('display','flex','important');
+    modal.style.position = 'fixed';
+    modal.style.inset = '0';
+    modal.style.zIndex = '2147483600';
+    modal.style.pointerEvents = 'auto';
+    modal.querySelectorAll('input,select,button').forEach(el => {
+      el.disabled = false;
+      el.removeAttribute('disabled');
+      el.style.pointerEvents = 'auto';
+    });
+    if (origen === 'beneficiarios') {
+      ['v162-ben-nom','v162-ben-tel','v162-ben-dir'].forEach(id=>{ if($(id)) $(id).value=''; });
+      if($('v162-ben-est')) $('v162-ben-est').value='Activo';
+    }
+    setTimeout(()=> $('v162-ben-nom')?.focus(), 0);
+    return true;
+  };
+  window.abrirModalBeneficiario = window.v162_abrirBen;
+
+  // Save to the same beneficiary registry used by suggestions and the beneficiary table.
+  window.v162_guardarBen = function() {
+    const nombre = $('v162-ben-nom')?.value.trim() || '';
+    const pais = $('v162-ben-pais')?.value || '+509';
+    const telefono = $('v162-ben-tel')?.value.trim() || '';
+    const direccion = $('v162-ben-dir')?.value.trim() || '';
+    const estado = $('v162-ben-est')?.value || 'Activo';
+    if (!nombre || !telefono) { alert('Complete el nombre y el teléfono del beneficiario.'); return false; }
+    const db = (typeof BENEFICIARIOS !== 'undefined' && Array.isArray(BENEFICIARIOS)) ? BENEFICIARIOS : (window.BENEFICIARIOS = (window.BENEFICIARIOS || []));
+    const telSoloDigitos = telefono.replace(/\D/g,'');
+    const duplicado = db.find(b => String(b.telefonoCompleto||b.telefono||'').replace(/\D/g,'') === (pais.replace(/\D/g,'') + telSoloDigitos) || String(b.telefono||'').replace(/\D/g,'') === telSoloDigitos);
+    if (duplicado) { alert('Ese teléfono ya está registrado como beneficiario.'); return false; }
+    const telCompleto = pais + ' ' + telefono;
+    const nuevo = {id:'BEN-'+Date.now(), nombre, telefono, codigoPais:pais, telefonoCompleto:telCompleto, direccion, estado, activo:estado==='Activo', fechaCreacion:new Date().toLocaleString('es-DO')};
+    db.unshift(nuevo);
+    try { localStorage.setItem('sendwayo_express_oficial_20261029_ben_v162', JSON.stringify(db)); } catch(e) {}
+    try { window.v162_renderBen?.(); } catch(e) { console.warn('No se pudo refrescar tabla de beneficiarios:',e); }
+    const destino = window._v162_origen === 'envio' ? $('v162-envio-ben') : window._v162_origen === 'retiro' ? $('v162-retiro-ben') : null;
+    if (destino) {
+      destino.value = `${telCompleto} (${nombre})`;
+      destino.dataset.phone = telCompleto;
+      destino.dataset.beneficiaryId = nuevo.id;
+      destino.dispatchEvent(new Event('input',{bubbles:true}));
+    }
+    const modal = $('modal-beneficiario-v162');
+    if(modal){modal.classList.add('hidden');modal.style.removeProperty('display');}
+    alert('Beneficiario guardado correctamente. Ya está disponible en las sugerencias.');
+    return true;
+  };
+
+  // Prevent a captured tap/click from being swallowed by older overlays or handlers.
+  document.addEventListener('click', function(ev){
+    const trigger = ev.target && ev.target.closest ? ev.target.closest('[onclick*="v162_abrirBen("]') : null;
+    if (!trigger) return;
+    const src = trigger.getAttribute('onclick') || '';
+    const match = src.match(/v162_abrirBen\(['"]([^'"]*)['"]\)/);
+    if (!match) return;
